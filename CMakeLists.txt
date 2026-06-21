@@ -5,7 +5,7 @@ find_package(glfw3 REQUIRED)
 
 add_executable(
   ${PROJECT_NAME}
-  src/gl.c
+  src/glad.c
   src/main.cpp
 )
 
@@ -37,4 +37,11 @@ target_compile_options(${PROJECT_NAME} PRIVATE
   $<$<CONFIG:Debug>:-ggdb>
   $<$<CONFIG:Release>:-O2>
   $<$<CONFIG:Release>:-DNDEBUG>
+)
+
+# Ignore warnings from glad.c
+set_source_files_properties(
+  src/glad.c
+  PROPERTIES
+  COMPILE_OPTIONS "-w"
 )
