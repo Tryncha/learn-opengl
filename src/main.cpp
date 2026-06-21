@@ -1,30 +1,58 @@
+// clang-format off
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
+// clang-format on
 
-int main(void) {
-  GLFWwindow* window;
+#include <iostream>
 
-  /* Initialize the library */
-  if (!glfwInit()) return -1;
+namespace constant {
+constexpr int width{800};
+constexpr int height{600};
+}  // namespace constant
 
-  /* Create a windowed mode window and its OpenGL context */
-  window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+// clang-format off
+void framebuffer_size_callback([[maybe_unused]] GLFWwindow* window,
+                               int width, int height) {
+  glViewport(0, 0, width, height);
+}
+// clang-format on
+
+void process_input(GLFWwindow* window) {
+  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+    glfwSetWindowShouldClose(window, true);
+  }
+}
+
+int main(int, char**) {
+  glfwInit();
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+  GLFWwindow* window{glfwCreateWindow(constant::width, constant::height,
+                                      "LearnOpenGL", NULL, NULL)};
+
   if (!window) {
+    std::cout << "Failed to create GLFW window.\n";
     glfwTerminate();
     return -1;
   }
 
-  /* Make the window's context current */
   glfwMakeContextCurrent(window);
+  glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-  /* Loop until the user closes the window */
+  if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
+    std::cout << "Failed to initialize GLAD.\n";
+    return -1;
+  }
+
   while (!glfwWindowShouldClose(window)) {
-    /* Render here */
+    process_input(window);
+
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    /* Swap front and back buffers */
     glfwSwapBuffers(window);
-
-    /* Poll for and process events */
     glfwPollEvents();
   }
 
