@@ -122,45 +122,32 @@ int main(int, char**) {
 
   // set up vertex data (and buffer(s)) and configure vertex attributes
   // clang-format off
-  // const std::array<float, 9> triangleVerts{
-  //   -0.5f, -0.5f, 0.0f,
-  //    0.5f, -0.5f, 0.0f,
-  //    0.0f,  0.5f, 0.0f
-  // };
+  const std::array<float, 2 * 9> vertices{
+    // left triangle
+    -0.5f,  -0.5f, 0.0f,
+    -0.05f, -0.5f, 0.0f,
+    -0.05f,  0.5f, 0.0f,
 
-  const std::array<float, 12> rectangleVerts{
-     0.5f,  0.5f, 0.0f,  // 0, top-right
-     0.5f, -0.5f, 0.0f,  // 1, bottom-right
-    -0.5f, -0.5f, 0.0f,  // 2, bottom-left
-    -0.5f,  0.5f, 0.0f   // 3, top-left
-  };
-
-  const std::array<unsigned int, 6> rectangleIdxs{
-    0, 1, 3,  // first triangle
-    1, 2, 3   // second triangle
+    // right triangle
+     0.5f,  -0.5f, 0.0f,
+     0.05f, -0.5f, 0.0f,
+     0.05f,  0.5f, 0.0f
   };
   // clang-format on
 
   unsigned int VBO{};
   unsigned int VAO{};
-  unsigned int EBO{};
 
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &VBO);
-  glGenBuffers(1, &EBO);
 
   // bind the Vertex Array Object first, then bind and set vertex buffer(s),
   // and then configure vertex attributes(s)
   glBindVertexArray(VAO);
 
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, rectangleVerts.size() * sizeof(float),
-               rectangleVerts.data(), GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-               rectangleIdxs.size() * sizeof(unsigned int),
-               rectangleIdxs.data(), GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float),
+               vertices.data(), GL_STATIC_DRAW);
 
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
   glEnableVertexAttribArray(0);
@@ -170,18 +157,11 @@ int main(int, char**) {
   // safely unbind
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-  // remember: do NOT unbind the EBO while a VAO is active as the bound element
-  // buffer object IS stored in the VAO; keep the EBO bound.
-  // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
   // you can unbind the VAO afterwards so other VAO calls won't accidentally
   // modify this VAO, but this rarely happens.
   // modifying other VAOs requires a call to glBindVertexArray anyways so we
   // generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
   glBindVertexArray(0);
-
-  // uncomment this call to draw in wireframe polygons
-  // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
   // render loop
   while (!glfwWindowShouldClose(window)) {
@@ -197,8 +177,8 @@ int main(int, char**) {
     // seeing as we only have a single VAO there's no need to bind it every
     // time, but we'll do so to keep things a bit more organized
     glBindVertexArray(VAO);
-    // glDrawArrays(GL_TRIANGLES, 0, 3);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    // set the count to 6 since we're drawing 6 vertices now, not 3!
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
     // no need to unbind it every time
     // glBindVertexArray(0);
