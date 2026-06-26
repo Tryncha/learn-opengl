@@ -4,6 +4,7 @@
 // clang-format on
 #include <array>
 #include <iostream>
+#include <string_view>
 
 namespace constants {
 constexpr int width{800};
@@ -63,7 +64,7 @@ void checkForCompileError(GLuint shader, std::string_view message) {
   glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
   if (!success) {
     glGetShaderInfoLog(shader, infoLog.size(), nullptr, infoLog.data());
-    std::cout << message << infoLog.data() << '\n';
+    std::cerr << message << infoLog.data() << '\n';
   }
 }
 
@@ -74,13 +75,18 @@ void checkForLinkError(GLuint program, std::string_view message) {
   glGetProgramiv(program, GL_LINK_STATUS, &success);
   if (!success) {
     glGetProgramInfoLog(program, infoLog.size(), nullptr, infoLog.data());
-    std::cout << message << infoLog.data() << '\n';
+    std::cerr << message << infoLog.data() << '\n';
   }
 }
 
 int main(int, char**) {
-  // glfw: initialize and configure
-  glfwInit();
+  // glfw: initialize
+  if (!glfwInit()) {
+    std::cerr << "Failed to initialize GLFW.\n";
+    return -1;
+  }
+
+  // and configure
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
