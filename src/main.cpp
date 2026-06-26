@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 #include <array>
+#include <cmath>
 #include <iostream>
 #include <string_view>
 
@@ -25,10 +26,11 @@ constexpr const char* vertexShaderSource{R"(
 constexpr const char* fragmentShaderSource{R"(
   #version 330 core
   
+  uniform vec4 ourColor;
   out vec4 FragColor;
   
   void main() {
-      FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
+      FragColor = ourColor;
   }
   )"};
 }  // namespace shaders
@@ -144,8 +146,12 @@ int main(int, char**) {
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
   glEnableVertexAttribArray(0);
 
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  // we can unbind the VAO afterwards so other VAO calls won't accidentally
+  // modify this VAO, but this rarely happens
   glBindVertexArray(0);
+
+  // bind the VAO (it was already bound, but just to demonstrate)
+  glBindVertexArray(VAO);
 
   while (!glfwWindowShouldClose(window)) {
     processInput(window);
@@ -153,7 +159,16 @@ int main(int, char**) {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    // activate the shader
     glUseProgram(shaderProgram);
+
+    // update the uniform color
+    float timeValue{static_cast<float>(glfwGetTime())};
+    float greenValue{std::sin(timeValue / 2.0f) + 0.5f};
+    int vertexColorLocation{glGetUniformLocation(shaderProgram, "ourColor")};
+    glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+
+    // render the triangle
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
