@@ -4,6 +4,7 @@
 // clang-format on
 #include <array>
 #include <iostream>
+#include <string_view>
 
 namespace constants {
 constexpr int width{800};
@@ -47,9 +48,36 @@ void processInput(GLFWwindow* window) {
   }
 }
 
+void checkForCompileError(GLuint shader, std::string_view message) {
+  GLint success{};
+  std::array<char, 512> infoLog{};
+
+  glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+  if (!success) {
+    glGetShaderInfoLog(shader, infoLog.size(), nullptr, infoLog.data());
+    std::cerr << message << infoLog.data() << '\n';
+  }
+}
+
+void checkForLinkError(GLuint program, std::string_view message) {
+  GLint success{};
+  std::array<char, 512> infoLog{};
+
+  glGetProgramiv(program, GL_LINK_STATUS, &success);
+  if (!success) {
+    glGetProgramInfoLog(program, infoLog.size(), nullptr, infoLog.data());
+    std::cerr << message << infoLog.data() << '\n';
+  }
+}
+
 int main(int, char**) {
-  // glfw: initialize and configure
-  glfwInit();
+  // glfw: initialize
+  if (!glfwInit()) {
+    std::cerr << "Failed to initialize GLFW.\n";
+    return -1;
+  }
+
+  // and configure
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -70,52 +98,35 @@ int main(int, char**) {
   // glad: load all OpenGL function pointers
   if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
     std::cout << "Failed to initialize GLAD.\n";
+    glfwTerminate();
     return -1;
   }
 
   // build and compile our shader program
-  // vertex shader
-  unsigned int vertexShader{};
-  vertexShader = glCreateShader(GL_VERTEX_SHADER);
+  GLuint vertexShader{glCreateShader(GL_VERTEX_SHADER)};
   glShaderSource(vertexShader, 1, &shaders::vertexShaderSource, nullptr);
   glCompileShader(vertexShader);
 
   // check for shader compile errors
-  int success{};
-  std::array<char, 512> infoLog{};
-  glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-  if (!success) {
-    glGetShaderInfoLog(vertexShader, infoLog.size(), nullptr, infoLog.data());
-    std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
-              << infoLog.data() << '\n';
-  }
+  checkForCompileError(vertexShader,
+                       "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n");
 
   // fragment shader
-  unsigned int fragmentShader{};
-  fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+  GLuint fragmentShader{glCreateShader(GL_FRAGMENT_SHADER)};
   glShaderSource(fragmentShader, 1, &shaders::fragmentShaderSource, nullptr);
   glCompileShader(fragmentShader);
 
-  glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-  if (!success) {
-    glGetShaderInfoLog(fragmentShader, infoLog.size(), nullptr, infoLog.data());
-    std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n"
-              << infoLog.data() << '\n';
-  }
+  glCompileShader(fragmentShader);
+  checkForCompileError(fragmentShader,
+                       "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n");
 
   // link shaders
-  unsigned int shaderProgram{};
-  shaderProgram = glCreateProgram();
+  GLuint shaderProgram{glCreateProgram()};
   glAttachShader(shaderProgram, vertexShader);
   glAttachShader(shaderProgram, fragmentShader);
-  glLinkProgram(shaderProgram);
 
-  glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-  if (!success) {
-    glGetProgramInfoLog(shaderProgram, infoLog.size(), nullptr, infoLog.data());
-    std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
-              << infoLog.data() << '\n';
-  }
+  glLinkProgram(shaderProgram);
+  checkForLinkError(shaderProgram, "ERROR::SHADER::PROGRAM::LINKING_FAILED\n");
 
   glDeleteShader(vertexShader);
   glDeleteShader(fragmentShader);
@@ -135,15 +146,15 @@ int main(int, char**) {
     -0.5f,  0.5f, 0.0f   // 3, top-left
   };
 
-  const std::array<unsigned int, 6> rectangleIdxs{
+  const std::array<int, 6> rectangleIdxs{
     0, 1, 3,  // first triangle
     1, 2, 3   // second triangle
   };
   // clang-format on
 
-  unsigned int VBO{};
-  unsigned int VAO{};
-  unsigned int EBO{};
+  GLuint VBO{};
+  GLuint VAO{};
+  GLuint EBO{};
 
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &VBO);
@@ -185,7 +196,6 @@ int main(int, char**) {
 
   // render loop
   while (!glfwWindowShouldClose(window)) {
-    // input
     processInput(window);
 
     // render
