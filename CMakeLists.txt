@@ -7,6 +7,7 @@ add_executable(
   ${PROJECT_NAME}
   src/glad.c
   src/main.cpp
+  src/shader.cpp
 )
 
 target_include_directories(

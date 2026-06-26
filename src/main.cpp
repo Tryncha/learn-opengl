@@ -7,36 +7,12 @@
 #include <iostream>
 #include <string_view>
 
+#include "shader.h"
+
 namespace constants {
 constexpr int width{800};
 constexpr int height{600};
 }  // namespace constants
-
-namespace shaders {
-constexpr const char* vertexShaderSource{R"(
-  #version 330 core
-  
-  layout (location = 0) in vec3 aPos;
-  layout (location = 1) in vec3 aColor;
-  out vec3 ourColor;
-  
-  void main() {
-      gl_Position = vec4(aPos, 1.0f);
-      ourColor = aColor;
-  }
-  )"};
-
-constexpr const char* fragmentShaderSource{R"(
-  #version 330 core
-  
-  in vec3 ourColor;
-  out vec4 FragColor;
-  
-  void main() {
-      FragColor = vec4(ourColor, 1.0f);
-  }
-  )"};
-}  // namespace shaders
 
 // clang-format off
 void framebufferSizeCallback([[maybe_unused]] GLFWwindow* window,
@@ -48,28 +24,6 @@ void framebufferSizeCallback([[maybe_unused]] GLFWwindow* window,
 void processInput(GLFWwindow* window) {
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     glfwSetWindowShouldClose(window, true);
-  }
-}
-
-void checkForCompileError(GLuint shader, std::string_view message) {
-  GLint success{};
-  std::array<char, 512> infoLog{};
-
-  glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-  if (!success) {
-    glGetShaderInfoLog(shader, infoLog.size(), nullptr, infoLog.data());
-    std::cerr << message << infoLog.data() << '\n';
-  }
-}
-
-void checkForLinkError(GLuint program, std::string_view message) {
-  GLint success{};
-  std::array<char, 512> infoLog{};
-
-  glGetProgramiv(program, GL_LINK_STATUS, &success);
-  if (!success) {
-    glGetProgramInfoLog(program, infoLog.size(), nullptr, infoLog.data());
-    std::cerr << message << infoLog.data() << '\n';
   }
 }
 
@@ -101,30 +55,7 @@ int main(int, char**) {
     return -1;
   }
 
-  GLuint vertexShader{glCreateShader(GL_VERTEX_SHADER)};
-  glShaderSource(vertexShader, 1, &shaders::vertexShaderSource, nullptr);
-  glCompileShader(vertexShader);
-
-  checkForCompileError(vertexShader,
-                       "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n");
-
-  GLuint fragmentShader{glCreateShader(GL_FRAGMENT_SHADER)};
-  glShaderSource(fragmentShader, 1, &shaders::fragmentShaderSource, nullptr);
-  glCompileShader(fragmentShader);
-
-  glCompileShader(fragmentShader);
-  checkForCompileError(fragmentShader,
-                       "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n");
-
-  GLuint shaderProgram{glCreateProgram()};
-  glAttachShader(shaderProgram, vertexShader);
-  glAttachShader(shaderProgram, fragmentShader);
-
-  glLinkProgram(shaderProgram);
-  checkForLinkError(shaderProgram, "ERROR::SHADER::PROGRAM::LINKING_FAILED\n");
-
-  glDeleteShader(vertexShader);
-  glDeleteShader(fragmentShader);
+  Shader ourShader{"src/shaders/vertex.glsl", "src/shaders/fragment.glsl"};
 
   // clang-format off
   // each row corresponds to a vertex:
@@ -148,25 +79,19 @@ int main(int, char**) {
   glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float),
                vertices.data(), GL_STATIC_DRAW);
 
-  // format disabled to clarify syntax
-  // clang-format off
-
-  // the function takes the following parameters:
-  // glVertexAttribPointer(indexAttr, sizeAttr, dataTypeAttr, needNormalize, stride, pointerWithOffset)
-
   // position attribute
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), reinterpret_cast<void*>(0));  // reinterpret_cast<void*>(0) == nullptr
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
+                        reinterpret_cast<void*>(0));
   glEnableVertexAttribArray(0);
 
   // color attribute
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), reinterpret_cast<void*>(3 * sizeof(float)));
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
+                        reinterpret_cast<void*>(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
-
-  // clang-format on
 
   // as we only have a single shader, we could also just activate our shader
   // once beforehand if we want to
-  glUseProgram(shaderProgram);
+  ourShader.use();
 
   while (!glfwWindowShouldClose(window)) {
     processInput(window);
@@ -183,7 +108,7 @@ int main(int, char**) {
 
   glDeleteVertexArrays(1, &VAO);
   glDeleteBuffers(1, &VBO);
-  glDeleteProgram(shaderProgram);
+  ourShader.remove();
 
   glfwTerminate();
   return 0;
