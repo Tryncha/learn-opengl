@@ -17,20 +17,23 @@ constexpr const char* vertexShaderSource{R"(
   #version 330 core
   
   layout (location = 0) in vec3 aPos;
+  layout (location = 1) in vec3 aColor;
+  out vec3 ourColor;
   
   void main() {
-      gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0f);
+      gl_Position = vec4(aPos, 1.0f);
+      ourColor = aColor;
   }
   )"};
 
 constexpr const char* fragmentShaderSource{R"(
   #version 330 core
   
-  uniform vec4 ourColor;
+  in vec3 ourColor;
   out vec4 FragColor;
   
   void main() {
-      FragColor = ourColor;
+      FragColor = vec4(ourColor, 1.0f);
   }
   )"};
 }  // namespace shaders
@@ -124,10 +127,12 @@ int main(int, char**) {
   glDeleteShader(fragmentShader);
 
   // clang-format off
-  const std::array<float, 9> vertices{
-    -0.5f, -0.5f, 0.0f,
-     0.5f, -0.5f, 0.0f,
-     0.0f,  0.5f, 0.0f
+  // each row corresponds to a vertex:
+  // 3 floats, 3 floats -> position, color
+  const std::array<float, 18> vertices{
+     0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f,  // top
+     0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,  // bottom-right
+    -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f   // bottom-left
   };
   // clang-format on
 
@@ -143,15 +148,25 @@ int main(int, char**) {
   glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float),
                vertices.data(), GL_STATIC_DRAW);
 
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+  // format disabled to clarify syntax
+  // clang-format off
+
+  // the function takes the following parameters:
+  // glVertexAttribPointer(indexAttr, sizeAttr, dataTypeAttr, needNormalize, stride, pointerWithOffset)
+
+  // position attribute
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), reinterpret_cast<void*>(0));  // reinterpret_cast<void*>(0) == nullptr
   glEnableVertexAttribArray(0);
 
-  // we can unbind the VAO afterwards so other VAO calls won't accidentally
-  // modify this VAO, but this rarely happens
-  glBindVertexArray(0);
+  // color attribute
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), reinterpret_cast<void*>(3 * sizeof(float)));
+  glEnableVertexAttribArray(1);
 
-  // bind the VAO (it was already bound, but just to demonstrate)
-  glBindVertexArray(VAO);
+  // clang-format on
+
+  // as we only have a single shader, we could also just activate our shader
+  // once beforehand if we want to
+  glUseProgram(shaderProgram);
 
   while (!glfwWindowShouldClose(window)) {
     processInput(window);
@@ -159,16 +174,6 @@ int main(int, char**) {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // activate the shader
-    glUseProgram(shaderProgram);
-
-    // update the uniform color
-    float timeValue{static_cast<float>(glfwGetTime())};
-    float greenValue{std::sin(timeValue / 2.0f) + 0.5f};
-    int vertexColorLocation{glGetUniformLocation(shaderProgram, "ourColor")};
-    glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
-
-    // render the triangle
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
