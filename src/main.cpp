@@ -91,7 +91,8 @@ int main(int, char**) {
   // as we only have a single shader, we could also just activate our shader
   // once beforehand if we want to
   ourShader.use();
-  ourShader.setBool("isUpsideDown", true);
+  ourShader.setBool("isUpsideDown", false);
+  ourShader.setFloat("offsetX", 0.25f);
 
   while (!glfwWindowShouldClose(window)) {
     processInput(window);
