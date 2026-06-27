@@ -3,7 +3,6 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 #include <array>
-#include <cmath>
 #include <iostream>
 #include <string_view>
 
@@ -92,6 +91,7 @@ int main(int, char**) {
   // as we only have a single shader, we could also just activate our shader
   // once beforehand if we want to
   ourShader.use();
+  ourShader.setBool("isUpsideDown", true);
 
   while (!glfwWindowShouldClose(window)) {
     processInput(window);
