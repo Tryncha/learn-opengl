@@ -7,6 +7,7 @@ layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aColor;
 
 out vec3 ourColor;
+out vec3 vertexPos;
 
 void main() {
   if(isUpsideDown) {
@@ -16,4 +17,5 @@ void main() {
   }
 
   ourColor = aColor;
+  vertexPos = aPos;
 }
