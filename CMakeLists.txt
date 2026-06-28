@@ -8,6 +8,7 @@ add_executable(
   src/glad.c
   src/main.cpp
   src/shader.cpp
+  src/stb_image.cpp
 )
 
 target_include_directories(
@@ -24,7 +25,8 @@ target_link_libraries(
   opengl32
 )
 
-target_compile_options(${PROJECT_NAME} PRIVATE
+target_compile_options(
+  ${PROJECT_NAME} PRIVATE
   -Wall
   -Wextra
   -Wpedantic
@@ -33,7 +35,8 @@ target_compile_options(${PROJECT_NAME} PRIVATE
   -Wshadow
 )
 
-target_compile_options(${PROJECT_NAME} PRIVATE
+target_compile_options(
+  ${PROJECT_NAME} PRIVATE
   $<$<CONFIG:Debug>:-g>
   $<$<CONFIG:Debug>:-ggdb>
   $<$<CONFIG:Release>:-O2>
