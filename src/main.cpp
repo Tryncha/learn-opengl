@@ -107,36 +107,71 @@ int main(int, char**) {
                         reinterpret_cast<void*>(6 * sizeof(float)));
   glEnableVertexAttribArray(2);
 
-  // load and create a texture
-  GLuint texture{};
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
+  int width{};
+  int height{};
+  int nrChannels{};
+
+  // load and create a texture 1
+  GLuint texture1{};
+
+  glGenTextures(1, &texture1);
+  glBindTexture(GL_TEXTURE_2D, texture1);
 
   // set the texture wrapping parameters
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
   // set texture filtering parameters
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                  GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  // load image, create texture and generate mipmaps
-  int width{};
-  int height{};
-  int nrChannels{};
-  unsigned char* data{
-      stbi_load("src/textures/container.jpg", &width, &height, &nrChannels, 0)};
+  // tell stb_image.h to flip loaded texture's on the y-axis.
+  stbi_set_flip_vertically_on_load(true);
 
-  if (data) {
+  const char* texturePath1{"src/textures/container.jpg"};
+  // load image, create texture and generate mipmaps
+  unsigned char* textureData1{
+      stbi_load(texturePath1, &width, &height, &nrChannels, 0)};
+
+  if (textureData1) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
-                 GL_UNSIGNED_BYTE, data);
+                 GL_UNSIGNED_BYTE, textureData1);
     glGenerateMipmap(GL_TEXTURE_2D);
   } else {
-    std::cout << "Failed to load texture.\n";
+    std::cerr << "Failed to load texture 1.\n";
   }
 
-  stbi_image_free(data);
+  stbi_image_free(textureData1);
+
+  // load and create a texture 2
+  GLuint texture2{};
+
+  glGenTextures(1, &texture2);
+  glBindTexture(GL_TEXTURE_2D, texture2);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  const char* texturePath2{"src/textures/awesomeface.png"};
+  unsigned char* textureData2{
+      stbi_load(texturePath2, &width, &height, &nrChannels, 0)};
+
+  if (textureData2) {
+    // note that the awesomeface.png has transparency and thus an alpha channel,
+    // so make sure to tell OpenGL the data type is of GL_RGBA
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, textureData2);
+    glGenerateMipmap(GL_TEXTURE_2D);
+  } else {
+    std::cerr << "Failed to load texture 2.\n";
+  }
+
+  stbi_image_free(textureData2);
+
+  ourShader.use();
+  ourShader.setInt("ourTexture1", 0);
+  ourShader.setInt("ourTexture2", 1);
 
   while (!glfwWindowShouldClose(window)) {
     processInput(window);
@@ -144,7 +179,11 @@ int main(int, char**) {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glBindTexture(GL_TEXTURE_2D, texture);
+    // bind textures on corresponding texture units
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture1);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture2);
 
     ourShader.use();
     glBindVertexArray(VAO);
