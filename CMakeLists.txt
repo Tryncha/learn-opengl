@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.10.0)
 project(learn-opengl VERSION 0.1.0 LANGUAGES C CXX)
 
 find_package(glfw3 REQUIRED)
+find_package(glm REQUIRED)
 
 add_executable(
   ${PROJECT_NAME}
@@ -12,17 +13,20 @@ add_executable(
 )
 
 target_include_directories(
-  ${PROJECT_NAME} PRIVATE include
+  ${PROJECT_NAME} PRIVATE
+  include
 )
 
 target_compile_features(
-  ${PROJECT_NAME} PRIVATE cxx_std_23
+  ${PROJECT_NAME} PRIVATE
+  cxx_std_23
 )
 
 target_link_libraries(
   ${PROJECT_NAME} PRIVATE
   glfw
   opengl32
+  glm::glm
 )
 
 target_compile_options(
