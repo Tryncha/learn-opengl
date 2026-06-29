@@ -191,7 +191,6 @@ int main(int, char**) {
                          glm::vec3(0.0f, 0.0f, 1.0f));
 
     // get matrix's uniform location and set matrix
-    ourShader.use();
     ourShader.setMat4("transf", transf);
 
     // render container
