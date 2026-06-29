@@ -5,6 +5,7 @@
 #include <stb_image/stb_image.h>
 
 #include <array>
+#include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -184,18 +185,30 @@ int main(int, char**) {
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, texture2);
 
-    // create transformations
-    glm::mat4 transf{glm::mat4(1.0)};
-    transf = glm::translate(transf, glm::vec3(0.5f, -0.5f, 0.0f));
-    transf = glm::rotate(transf, static_cast<float>(glfwGetTime()),
-                         glm::vec3(0.0f, 0.0f, 1.0f));
+    // first transformation
+    glm::mat4 transf1{glm::mat4(1.0)};
+    transf1 = glm::translate(transf1, glm::vec3(0.5f, -0.5f, 0.0f));
+    transf1 = glm::rotate(transf1, static_cast<float>(glfwGetTime()),
+                          glm::vec3(0.0f, 0.0f, 1.0f));
 
-    // get matrix's uniform location and set matrix
-    ourShader.use();
-    ourShader.setMat4("transf", transf);
+    // set first transformation
+    ourShader.setMat4("transf", transf1);
 
-    // render container
+    // render first container
     glBindVertexArray(VAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    // second transformation
+    glm::mat4 transf2{glm::mat4(1.0)};
+    transf2 = glm::translate(transf2, glm::vec3(-0.5f, 0.5f, 0.0f));
+    float scaleAmount{static_cast<float>(std::sin(glfwGetTime()))};
+    transf2 =
+        glm::scale(transf2, glm::vec3(scaleAmount, scaleAmount, scaleAmount));
+
+    // set second transformation
+    ourShader.setMat4("transf", transf2);
+
+    // render second container
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
     glfwSwapBuffers(window);
