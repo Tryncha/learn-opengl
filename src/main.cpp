@@ -2,12 +2,12 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 // clang-format on
+#include <stb_image/stb_image.h>
+
 #include <array>
 #include <iostream>
-#include <string_view>
 
 #include "shader.h"
-#include "stb_image.h"
 
 namespace constants {
 constexpr int width{800};
