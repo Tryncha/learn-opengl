@@ -108,6 +108,19 @@ int main(int, char**) {
     -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
   };
+
+  const std::array<glm::vec3, 10> cubePositions{
+    glm::vec3( 0.0f,  0.0f,   0.0f), 
+    glm::vec3( 2.0f,  5.0f, -15.0f), 
+    glm::vec3(-1.5f, -2.2f,  -2.5f),  
+    glm::vec3(-3.8f, -2.0f, -12.3f),  
+    glm::vec3( 2.4f, -0.4f,  -3.5f),  
+    glm::vec3(-1.7f,  3.0f,  -7.5f),  
+    glm::vec3( 1.3f, -2.0f,  -2.5f),  
+    glm::vec3( 1.5f,  2.0f,  -2.5f), 
+    glm::vec3( 1.5f,  0.2f,  -1.5f), 
+    glm::vec3(-1.3f,  1.0f,  -1.5f)  
+};
   // clang-format on
 
   GLuint VBO{};
@@ -212,33 +225,38 @@ int main(int, char**) {
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, texture2);
 
+    glBindVertexArray(VAO);
+
     // create transformations
-    // clang-format off
-    glm::mat4 model     {glm::mat4(1.0)};
-    glm::mat4 view      {glm::mat4(1.0)};
-    glm::mat4 projection{glm::mat4(1.0)};
-    // clang-format on
-
-    model = glm::rotate(model,
-                        static_cast<float>(glfwGetTime()) * glm::radians(50.0f),
-                        glm::vec3(0.5f, 1.0f, 0.0f));
-
-    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 
     float fovAngle{45.0f};
     float aspectRatio{static_cast<float>(constants::width) /
                       static_cast<float>(constants::height)};
 
+    glm::mat4 projection{glm::mat4(1.0)};
     projection =
         glm::perspective(glm::radians(fovAngle), aspectRatio, 0.1f, 100.0f);
 
-    ourShader.setMat4("model", model);
-    ourShader.setMat4("view", view);
     ourShader.setMat4("projection", projection);
 
-    // render container
-    glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glm::mat4 view{glm::mat4(1.0)};
+    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+
+    ourShader.setMat4("view", view);
+
+    for (std::size_t i{0}; i < cubePositions.size(); ++i) {
+      float angle{20.0f * static_cast<float>(i)};
+
+      glm::mat4 model{glm::mat4(1.0)};
+      model = glm::translate(model, cubePositions[i]);
+      model =
+          glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+
+      ourShader.setMat4("model", model);
+
+      // render container
+      glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
 
     glfwSwapBuffers(window);
     glfwPollEvents();
