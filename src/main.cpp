@@ -245,7 +245,8 @@ int main(int, char**) {
     ourShader.setMat4("view", view);
 
     for (std::size_t i{0}; i < cubePositions.size(); ++i) {
-      float angle{20.0f * static_cast<float>(i)};
+      float angle{25.0f * (i % 3 == 0 ? static_cast<float>(glfwGetTime())
+                                      : static_cast<float>(i))};
 
       glm::mat4 model{glm::mat4(1.0)};
       model = glm::translate(model, cubePositions[i]);
