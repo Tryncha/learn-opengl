@@ -5,6 +5,7 @@
 #include <stb_image/stb_image.h>
 
 #include <array>
+#include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -20,7 +21,7 @@ namespace data {
 // clang-format off
 // each row corresponds to a vertex:
 // 3 floats, 2 floats -> position, textureCoords
-constexpr std::array<float, 5 * 6 * 6> vertexData{
+constexpr std::array<float, (3 + 2) * 6 * 6> vertexData{
   -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
    0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
    0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
@@ -227,8 +228,37 @@ int main(int, char**) {
 
     glBindVertexArray(VAO);
 
-    // create transformations
+    // camera implementation
+    const float radius{10.0f};
+    float camX{static_cast<float>(std::sin(glfwGetTime())) * radius};
+    float camZ{static_cast<float>(std::cos(glfwGetTime())) * radius};
 
+    // manual process to create lookAt matrix
+    glm::vec3 cameraPos{glm::vec3(camX, 0.0f, camZ)};
+    glm::vec3 cameraTarget{glm::vec3(0.0f, 0.0f, 0.0f)};
+    glm::vec3 cameraDirection{glm::normalize(cameraPos - cameraTarget)};
+
+    glm::vec3 up{glm::vec3(0.0f, 1.0f, 0.0f)};
+    glm::vec3 cameraRight{glm::normalize(glm::cross(up, cameraDirection))};
+    glm::vec3 cameraUp{glm::cross(cameraDirection, cameraRight)};
+
+    // glm::mat4 receives the columns of the matrix, not the rows
+    glm::mat4 view{
+        glm::mat4(glm::vec4(cameraRight.x, cameraUp.x, cameraDirection.x, 0.0f),
+                  glm::vec4(cameraRight.y, cameraUp.y, cameraDirection.y, 0.0f),
+                  glm::vec4(cameraRight.z, cameraUp.z, cameraDirection.z, 0.0f),
+                  glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)) *
+        glm::mat4(glm::vec4(1.0f, 0.0f, 0.0f, 0.0f),
+                  glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+                  glm::vec4(0.0f, 0.0f, 1.0f, 0.0f),
+                  glm::vec4(-cameraPos.x, -cameraPos.y, -cameraPos.z, 1.0f))};
+
+    //  built-in glm function that automates the process
+    // glm::mat4 view{glm::lookAt(glm::vec3(camX, 0.0f, camZ),
+    //                            glm::vec3(0.0f, 0.0f, 0.0f),
+    //                            glm::vec3(0.0f, 1.0f, 0.0f))};
+
+    // create transformations
     float fovAngle{45.0f};
     float aspectRatio{static_cast<float>(constants::width) /
                       static_cast<float>(constants::height)};
@@ -239,8 +269,8 @@ int main(int, char**) {
 
     ourShader.setMat4("projection", projection);
 
-    glm::mat4 view{glm::mat4(1.0)};
-    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+    // glm::mat4 view{glm::mat4(1.0)};
+    // view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 
     ourShader.setMat4("view", view);
 
