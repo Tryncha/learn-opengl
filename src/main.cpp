@@ -5,20 +5,26 @@
 #include <stb_image/stb_image.h>
 
 #include <array>
-#include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 
 #include "shader.h"
 
+// clang-format off
 namespace constants {
-constexpr int width{800};
+constexpr int width {800};
 constexpr int height{600};
 }  // namespace constants
 
+namespace camera {
+constexpr float speed{0.001f};
+glm::vec3 position{glm::vec3(0.0f, 0.0f,  3.0f)};
+glm::vec3 front   {glm::vec3(0.0f, 0.0f, -1.0f)};
+glm::vec3 up      {glm::vec3(0.0f, 1.0f,  0.0f)};
+}  // namespace camera
+
 namespace data {
-// clang-format off
 // each row corresponds to a vertex:
 // 3 floats, 2 floats -> position, textureCoords
 constexpr std::array<float, (3 + 2) * 6 * 6> vertexData{
@@ -78,7 +84,9 @@ constexpr std::array<glm::vec3, 10> cubePositions{
   glm::vec3(-1.3f,  1.0f,  -1.5f)  
 };
 } // namespace data
+// clang-format on
 
+// clang-format off
 void framebufferSizeCallback([[maybe_unused]] GLFWwindow* window,
                              int width, int height) {
   glViewport(0, 0, width, height);
@@ -88,6 +96,25 @@ void framebufferSizeCallback([[maybe_unused]] GLFWwindow* window,
 void processInput(GLFWwindow* window) {
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     glfwSetWindowShouldClose(window, true);
+  }
+
+  // WASD controls
+  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+    camera::position += camera::front * camera::speed;
+  }
+
+  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+    camera::position -=
+        glm::normalize(glm::cross(camera::front, camera::up)) * camera::speed;
+  }
+
+  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+    camera::position -= camera::front * camera::speed;
+  }
+
+  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+    camera::position +=
+        glm::normalize(glm::cross(camera::front, camera::up)) * camera::speed;
   }
 }
 
@@ -214,6 +241,7 @@ int main(int, char**) {
   ourShader.setInt("ourTexture1", 0);
   ourShader.setInt("ourTexture2", 1);
 
+  // projection matrix
   const float fovAngle{45.0f};
   const float aspectRatio{static_cast<float>(constants::width) /
                           static_cast<float>(constants::height)};
@@ -240,16 +268,13 @@ int main(int, char**) {
 
     glBindVertexArray(VAO);
 
-    const float radius{10.0f};
-    float camX{static_cast<float>(std::sin(glfwGetTime())) * radius};
-    float camZ{static_cast<float>(std::cos(glfwGetTime())) * radius};
-
-    glm::mat4 view{glm::lookAt(glm::vec3(camX, 0.0f, camZ),
-                               glm::vec3(0.0f, 0.0f, 0.0f),
-                               glm::vec3(0.0f, 1.0f, 0.0f))};
+    // view matrix
+    glm::mat4 view{glm::lookAt(camera::position,
+                               camera::position + camera::front, camera::up)};
 
     ourShader.setMat4("view", view);
 
+    // model matrix
     for (std::size_t i{0}; i < data::cubePositions.size(); ++i) {
       float angle{20.0f * static_cast<float>(i)};
 
