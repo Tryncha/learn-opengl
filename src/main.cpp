@@ -214,6 +214,16 @@ int main(int, char**) {
   ourShader.setInt("ourTexture1", 0);
   ourShader.setInt("ourTexture2", 1);
 
+  const float fovAngle{45.0f};
+  const float aspectRatio{static_cast<float>(constants::width) /
+                          static_cast<float>(constants::height)};
+
+  glm::mat4 projection{glm::mat4(1.0)};
+  projection =
+      glm::perspective(glm::radians(fovAngle), aspectRatio, 0.1f, 100.0f);
+
+  ourShader.setMat4("projection", projection);
+
   while (!glfwWindowShouldClose(window)) {
     processInput(window);
 
@@ -257,17 +267,6 @@ int main(int, char**) {
     // glm::mat4 view{glm::lookAt(glm::vec3(camX, 0.0f, camZ),
     //                            glm::vec3(0.0f, 0.0f, 0.0f),
     //                            glm::vec3(0.0f, 1.0f, 0.0f))};
-
-    // create transformations
-    float fovAngle{45.0f};
-    float aspectRatio{static_cast<float>(constants::width) /
-                      static_cast<float>(constants::height)};
-
-    glm::mat4 projection{glm::mat4(1.0)};
-    projection =
-        glm::perspective(glm::radians(fovAngle), aspectRatio, 0.1f, 100.0f);
-
-    ourShader.setMat4("projection", projection);
 
     // glm::mat4 view{glm::mat4(1.0)};
     // view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
