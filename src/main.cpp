@@ -10,6 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 
+#include "data.h"
 #include "shader.h"
 
 // clang-format off
@@ -19,15 +20,22 @@ constexpr int height{600};
 }  // namespace constants
 
 namespace camera {
-constexpr float baseSpeed  {2.5f};
-constexpr float sensitivity{0.1f};
+constexpr float minFov{ 1.0f};
+constexpr float maxFov{45.0f};
 
+float baseSpeed  {2.5f};
+float sensitivity{0.1f};
+float fov        {maxFov};
+
+constexpr float minPitch{-89.9f};
+constexpr float maxPitch{ 89.9f};
+
+// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in
+// a direction vector pointing to the right so we initially rotate a
+// bit to the left
 float yaw  {-90.0f};  // rotates y-axis
 float pitch{  0.0f};  // rotates x-axis
 float roll {  0.0f};  // rotates z-axis
-
-constexpr float pitchUpperLimit{ 89.0f};
-constexpr float pitchLowerLimit{-89.0f};
 
 glm::vec3 direction{};
 glm::vec3 position {glm::vec3(0.0f, 0.0f,  3.0f)};
@@ -47,67 +55,6 @@ bool isFirstInput{true};
 float lastX{window::width / 2};
 float lastY{window::height / 2};
 } // namespace cursor
-
-namespace data {
-// each row corresponds to a vertex:
-// 3 floats, 2 floats -> position, textureCoords
-constexpr std::array<float, (3 + 2) * 6 * 6> vertexData{
-  -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-   0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-   0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-   0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-  -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-  -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-
-  -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-   0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-   0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-   0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-  -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-  -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-
-  -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-  -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-  -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-  -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-  -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-  -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-   0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-   0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-   0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-   0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-   0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-   0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-  -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-   0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-   0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-   0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-  -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-  -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-  -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-   0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-   0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-   0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-  -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-  -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-};
-
-constexpr std::array<glm::vec3, 10> cubePositions{
-  glm::vec3( 0.0f,  0.0f,   0.0f), 
-  glm::vec3( 2.0f,  5.0f, -15.0f), 
-  glm::vec3(-1.5f, -2.2f,  -2.5f),  
-  glm::vec3(-3.8f, -2.0f, -12.3f),  
-  glm::vec3( 2.4f, -0.4f,  -3.5f),  
-  glm::vec3(-1.7f,  3.0f,  -7.5f),  
-  glm::vec3( 1.3f, -2.0f,  -2.5f),  
-  glm::vec3( 1.5f,  2.0f,  -2.5f), 
-  glm::vec3( 1.5f,  0.2f,  -1.5f), 
-  glm::vec3(-1.3f,  1.0f,  -1.5f)  
-};
-} // namespace data
 // clang-format on
 
 // GLFW callbacks
@@ -138,13 +85,8 @@ void cursorPosCallback([[maybe_unused]] GLFWwindow* window, double posX,
   camera::yaw += offsetX;
   camera::pitch += offsetY;
 
-  if (camera::pitch > camera::pitchUpperLimit) {
-    camera::pitch = camera::pitchUpperLimit;
-  }
-
-  if (camera::pitch < camera::pitchLowerLimit) {
-    camera::pitch = camera::pitchLowerLimit;
-  }
+  if (camera::pitch < camera::minPitch) camera::pitch = camera::minPitch;
+  if (camera::pitch > camera::maxPitch) camera::pitch = camera::maxPitch;
 
   camera::direction.x = std::cos(glm::radians(camera::yaw)) *
                         std::cos(glm::radians(camera::pitch));
@@ -155,6 +97,15 @@ void cursorPosCallback([[maybe_unused]] GLFWwindow* window, double posX,
                         std::cos(glm::radians(camera::pitch));
 
   camera::front = glm::normalize(camera::direction);
+}
+
+// offsetY means how much we scrolled vertically
+void scrollCallback([[maybe_unused]] GLFWwindow* window,
+                    [[maybe_unused]] double offsetX, double offsetY) {
+  camera::fov -= static_cast<float>(offsetY);
+
+  if (camera::fov < camera::minFov) camera::fov = camera::minFov;
+  if (camera::fov > camera::maxFov) camera::fov = camera::maxFov;
 }
 
 // process input
@@ -205,8 +156,11 @@ int main(int, char**) {
   }
 
   glfwMakeContextCurrent(window);
+
+  // callbacks
   glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
   glfwSetCursorPosCallback(window, cursorPosCallback);
+  glfwSetScrollCallback(window, scrollCallback);
 
   // hides the cursor and captures it (makes it stay in the center)
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -312,19 +266,6 @@ int main(int, char**) {
   ourShader.setInt("ourTexture1", 0);
   ourShader.setInt("ourTexture2", 1);
 
-  // projection matrix
-  const float fovAngle{45.0f};
-  const float aspectRatio{static_cast<float>(window::width) /
-                          static_cast<float>(window::height)};
-
-  // pass projection matrix to shader, as projection matrix rarely changes
-  // there's no need to do this per frame
-  glm::mat4 projection{glm::mat4(1.0)};
-  projection =
-      glm::perspective(glm::radians(fovAngle), aspectRatio, 0.1f, 100.0f);
-
-  ourShader.setMat4("projection", projection);
-
   while (!glfwWindowShouldClose(window)) {
     // deltaTime calculation to keep consistent the camera speed
     timing::currentFrame = static_cast<float>(glfwGetTime());
@@ -342,13 +283,27 @@ int main(int, char**) {
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, texture2);
 
-    glBindVertexArray(VAO);
+    // activate shader
+    ourShader.use();
+
+    // projection matrix, now need to change every frame
+    const float aspectRatio{static_cast<float>(window::width) /
+                            static_cast<float>(window::height)};
+
+    glm::mat4 projection{glm::mat4(1.0)};
+    projection =
+        glm::perspective(glm::radians(camera::fov), aspectRatio, 0.1f, 100.0f);
+
+    ourShader.setMat4("projection", projection);
 
     // view matrix
-    glm::mat4 view{glm::lookAt(camera::position,
-                               camera::position + camera::front, camera::up)};
+    glm::mat4 view{glm::mat4(1.0)};
+    view = glm::lookAt(camera::position, camera::position + camera::front,
+                       camera::up);
 
     ourShader.setMat4("view", view);
+
+    glBindVertexArray(VAO);
 
     // model matrix
     for (std::size_t i{0}; i < data::cubePositions.size(); ++i) {
