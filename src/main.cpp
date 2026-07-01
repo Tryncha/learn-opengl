@@ -5,6 +5,7 @@
 #include <stb_image/stb_image.h>
 
 #include <array>
+#include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -12,17 +13,40 @@
 #include "shader.h"
 
 // clang-format off
-namespace constants {
+namespace window {
 constexpr int width {800};
 constexpr int height{600};
 }  // namespace constants
 
 namespace camera {
-constexpr float speed{0.001f};
-glm::vec3 position{glm::vec3(0.0f, 0.0f,  3.0f)};
-glm::vec3 front   {glm::vec3(0.0f, 0.0f, -1.0f)};
-glm::vec3 up      {glm::vec3(0.0f, 1.0f,  0.0f)};
+constexpr float baseSpeed  {2.5f};
+constexpr float sensitivity{0.1f};
+
+float yaw  {-90.0f};  // x-axis
+float pitch{  0.0f};  // y-axis
+float roll {  0.0f};  // z-axis
+
+constexpr float pitchUpperLimit{ 89.0f};
+constexpr float pitchLowerLimit{-89.0f};
+
+glm::vec3 direction{};
+glm::vec3 position {glm::vec3(0.0f, 0.0f,  3.0f)};
+glm::vec3 front    {glm::vec3(0.0f, 0.0f, -1.0f)};
+glm::vec3 up       {glm::vec3(0.0f, 1.0f,  0.0f)};
 }  // namespace camera
+
+namespace timing {
+float currentFrame{};
+float lastFrame   {0.0f};
+// time between current frame and last frame
+float deltaTime   {0.0f};
+} // namespace framerate
+
+namespace cursor {
+bool isFirstInput{true};
+float lastX{window::width / 2};
+float lastY{window::height / 2};
+} // namespace cursor
 
 namespace data {
 // each row corresponds to a vertex:
@@ -86,35 +110,78 @@ constexpr std::array<glm::vec3, 10> cubePositions{
 } // namespace data
 // clang-format on
 
-// clang-format off
-void framebufferSizeCallback([[maybe_unused]] GLFWwindow* window,
-                             int width, int height) {
+// GLFW callbacks
+void framebufferSizeCallback([[maybe_unused]] GLFWwindow* window, int width,
+                             int height) {
   glViewport(0, 0, width, height);
 }
-// clang-format on
 
-void processInput(GLFWwindow* window) {
+// mouse/cursor controls
+void cursorPosCallback([[maybe_unused]] GLFWwindow* window, double posX,
+                       double posY) {
+  if (cursor::isFirstInput) {
+    cursor::lastX = static_cast<float>(posX);
+    cursor::lastY = static_cast<float>(posY);
+    cursor::isFirstInput = false;
+  }
+
+  float offsetX{static_cast<float>(posX - cursor::lastX)};
+  // y-coords range from bottom to top
+  float offsetY{static_cast<float>(cursor::lastY - posY)};
+
+  cursor::lastX = static_cast<float>(posX);
+  cursor::lastY = static_cast<float>(posY);
+
+  offsetX *= camera::sensitivity;
+  offsetY *= camera::sensitivity;
+
+  camera::yaw += offsetX;
+  camera::pitch += offsetY;
+
+  if (camera::pitch > camera::pitchUpperLimit) {
+    camera::pitch = camera::pitchUpperLimit;
+  }
+
+  if (camera::pitch < camera::pitchLowerLimit) {
+    camera::pitch = camera::pitchLowerLimit;
+  }
+
+  camera::direction.x = std::cos(glm::radians(camera::yaw)) *
+                        std::cos(glm::radians(camera::pitch));
+
+  camera::direction.y = std::sin(glm::radians(camera::pitch));
+
+  camera::direction.z = std::sin(glm::radians(camera::yaw)) *
+                        std::cos(glm::radians(camera::pitch));
+
+  camera::front = glm::normalize(camera::direction);
+}
+
+// process input
+void processKeyboardInput(GLFWwindow* window) {
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     glfwSetWindowShouldClose(window, true);
   }
 
+  float cameraSpeed{camera::baseSpeed * timing::deltaTime};
+
   // WASD controls
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-    camera::position += camera::front * camera::speed;
+    camera::position += camera::front * cameraSpeed;
   }
 
   if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
     camera::position -=
-        glm::normalize(glm::cross(camera::front, camera::up)) * camera::speed;
+        glm::normalize(glm::cross(camera::front, camera::up)) * cameraSpeed;
   }
 
   if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-    camera::position -= camera::front * camera::speed;
+    camera::position -= camera::front * cameraSpeed;
   }
 
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
     camera::position +=
-        glm::normalize(glm::cross(camera::front, camera::up)) * camera::speed;
+        glm::normalize(glm::cross(camera::front, camera::up)) * cameraSpeed;
   }
 }
 
@@ -128,7 +195,7 @@ int main(int, char**) {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-  GLFWwindow* window{glfwCreateWindow(constants::width, constants::height,
+  GLFWwindow* window{glfwCreateWindow(window::width, window::height,
                                       "LearnOpenGL", nullptr, nullptr)};
 
   if (!window) {
@@ -139,6 +206,10 @@ int main(int, char**) {
 
   glfwMakeContextCurrent(window);
   glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+  glfwSetCursorPosCallback(window, cursorPosCallback);
+
+  // hides the cursor and captures it (makes it stay in the center)
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
   if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
     std::cout << "Failed to initialize GLAD.\n";
@@ -243,8 +314,8 @@ int main(int, char**) {
 
   // projection matrix
   const float fovAngle{45.0f};
-  const float aspectRatio{static_cast<float>(constants::width) /
-                          static_cast<float>(constants::height)};
+  const float aspectRatio{static_cast<float>(window::width) /
+                          static_cast<float>(window::height)};
 
   // pass projection matrix to shader, as projection matrix rarely changes
   // there's no need to do this per frame
@@ -255,7 +326,12 @@ int main(int, char**) {
   ourShader.setMat4("projection", projection);
 
   while (!glfwWindowShouldClose(window)) {
-    processInput(window);
+    // deltaTime calculation to keep consistent the camera speed
+    timing::currentFrame = static_cast<float>(glfwGetTime());
+    timing::deltaTime = timing::currentFrame - timing::lastFrame;
+    timing::lastFrame = timing::currentFrame;
+
+    processKeyboardInput(window);
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
