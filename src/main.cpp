@@ -22,9 +22,9 @@ namespace camera {
 constexpr float baseSpeed  {2.5f};
 constexpr float sensitivity{0.1f};
 
-float yaw  {-90.0f};  // x-axis
-float pitch{  0.0f};  // y-axis
-float roll {  0.0f};  // z-axis
+float yaw  {-90.0f};  // rotates y-axis
+float pitch{  0.0f};  // rotates x-axis
+float roll {  0.0f};  // rotates z-axis
 
 constexpr float pitchUpperLimit{ 89.0f};
 constexpr float pitchLowerLimit{-89.0f};
