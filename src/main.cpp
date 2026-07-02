@@ -10,6 +10,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 
+#include "camera.h"
+#include "constants.h"
 #include "data.h"
 #include "shader.h"
 
@@ -19,41 +21,10 @@ constexpr int width {800};
 constexpr int height{600};
 }  // namespace constants
 
-namespace camera {
-constexpr float minFov{ 1.0f};
-constexpr float maxFov{45.0f};
-
-float baseSpeed  {2.5f};
-float sensitivity{0.1f};
-float fov        {maxFov};
-
-constexpr float minPitch{-89.9f};
-constexpr float maxPitch{ 89.9f};
-
-// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in
-// a direction vector pointing to the right so we initially rotate a
-// bit to the left
-float yaw  {-90.0f};  // rotates y-axis
-float pitch{  0.0f};  // rotates x-axis
-float roll {  0.0f};  // rotates z-axis
-
-glm::vec3 direction{};
-glm::vec3 position {glm::vec3(0.0f, 0.0f,  3.0f)};
-glm::vec3 front    {glm::vec3(0.0f, 0.0f, -1.0f)};
-glm::vec3 up       {glm::vec3(0.0f, 1.0f,  0.0f)};
-}  // namespace camera
-
-namespace timing {
-float currentFrame{};
-float lastFrame   {0.0f};
-// time between current frame and last frame
-float deltaTime   {0.0f};
-} // namespace framerate
-
 namespace cursor {
-bool isFirstInput{true};
-float lastX{window::width / 2};
-float lastY{window::height / 2};
+inline bool isFirstInput{true};
+inline float lastX{window::width / 2};
+inline float lastY{window::height / 2};
 } // namespace cursor
 // clang-format on
 
@@ -66,6 +37,8 @@ void framebufferSizeCallback([[maybe_unused]] GLFWwindow* window, int width,
 // mouse/cursor controls
 void cursorPosCallback([[maybe_unused]] GLFWwindow* window, double posX,
                        double posY) {
+  auto& camera{*static_cast<Camera*>(glfwGetWindowUserPointer(window))};
+
   if (cursor::isFirstInput) {
     cursor::lastX = static_cast<float>(posX);
     cursor::lastY = static_cast<float>(posY);
@@ -79,61 +52,24 @@ void cursorPosCallback([[maybe_unused]] GLFWwindow* window, double posX,
   cursor::lastX = static_cast<float>(posX);
   cursor::lastY = static_cast<float>(posY);
 
-  offsetX *= camera::sensitivity;
-  offsetY *= camera::sensitivity;
-
-  camera::yaw += offsetX;
-  camera::pitch += offsetY;
-
-  if (camera::pitch < camera::minPitch) camera::pitch = camera::minPitch;
-  if (camera::pitch > camera::maxPitch) camera::pitch = camera::maxPitch;
-
-  camera::direction.x = std::cos(glm::radians(camera::yaw)) *
-                        std::cos(glm::radians(camera::pitch));
-
-  camera::direction.y = std::sin(glm::radians(camera::pitch));
-
-  camera::direction.z = std::sin(glm::radians(camera::yaw)) *
-                        std::cos(glm::radians(camera::pitch));
-
-  camera::front = glm::normalize(camera::direction);
+  camera.processMouseInput(offsetX, offsetY);
 }
 
 // offsetY means how much we scrolled vertically
 void scrollCallback([[maybe_unused]] GLFWwindow* window,
                     [[maybe_unused]] double offsetX, double offsetY) {
-  camera::fov -= static_cast<float>(offsetY);
-
-  if (camera::fov < camera::minFov) camera::fov = camera::minFov;
-  if (camera::fov > camera::maxFov) camera::fov = camera::maxFov;
+  auto& camera{*static_cast<Camera*>(glfwGetWindowUserPointer(window))};
+  camera.processScrollInput(offsetY);
 }
 
 // process input
-void processKeyboardInput(GLFWwindow* window) {
-  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+void processInput(GLFWwindow* window) {
+  auto& camera{*static_cast<Camera*>(glfwGetWindowUserPointer(window))};
+
+  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     glfwSetWindowShouldClose(window, true);
-  }
 
-  float cameraSpeed{camera::baseSpeed * timing::deltaTime};
-
-  // WASD controls
-  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-    camera::position += camera::front * cameraSpeed;
-  }
-
-  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-    camera::position -=
-        glm::normalize(glm::cross(camera::front, camera::up)) * cameraSpeed;
-  }
-
-  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-    camera::position -= camera::front * cameraSpeed;
-  }
-
-  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-    camera::position +=
-        glm::normalize(glm::cross(camera::front, camera::up)) * cameraSpeed;
-  }
+  camera.processKeyboardInput(window);
 }
 
 int main(int, char**) {
@@ -156,6 +92,11 @@ int main(int, char**) {
   }
 
   glfwMakeContextCurrent(window);
+
+  Camera camera{glm::vec3(0.0f, 0.0f, 3.0f)};
+
+  // save camera as "user pointer" to retrieve later by reference
+  glfwSetWindowUserPointer(window, &camera);
 
   // callbacks
   glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
@@ -272,7 +213,7 @@ int main(int, char**) {
     timing::deltaTime = timing::currentFrame - timing::lastFrame;
     timing::lastFrame = timing::currentFrame;
 
-    processKeyboardInput(window);
+    processInput(window);
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -291,17 +232,13 @@ int main(int, char**) {
                             static_cast<float>(window::height)};
 
     glm::mat4 projection{glm::mat4(1.0)};
-    projection =
-        glm::perspective(glm::radians(camera::fov), aspectRatio, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(camera.getFov()), aspectRatio,
+                                  0.1f, 100.0f);
 
     ourShader.setMat4("projection", projection);
 
     // view matrix
-    glm::mat4 view{glm::mat4(1.0)};
-    view = glm::lookAt(camera::position, camera::position + camera::front,
-                       camera::up);
-
-    ourShader.setMat4("view", view);
+    ourShader.setMat4("view", camera.getViewMatrix());
 
     glBindVertexArray(VAO);
 

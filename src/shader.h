@@ -13,8 +13,6 @@ class Shader {
  public:
   Shader(const char* vertexPath, const char* fragmentPath);
 
-  GLuint getShaderProgram() const;
-
   // use/activate the shader and delete it
   void use();
   void remove();
@@ -41,7 +39,7 @@ class Shader {
   void setMat4(const std::string& name, const glm::mat4& mat) const;
 
  private:
-  GLuint shaderProgram;
+  GLuint m_shaderProgram;
 };
 
 #endif

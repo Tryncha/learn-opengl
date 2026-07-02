@@ -7,6 +7,7 @@ find_package(glm REQUIRED)
 add_executable(
   ${PROJECT_NAME}
   src/glad.c
+  src/camera.cpp
   src/main.cpp
   src/shader.cpp
   src/stb_image.cpp
