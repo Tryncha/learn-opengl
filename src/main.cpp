@@ -15,19 +15,6 @@
 #include "data.h"
 #include "shader.h"
 
-// clang-format off
-namespace window {
-constexpr int width {800};
-constexpr int height{600};
-}  // namespace constants
-
-namespace cursor {
-inline bool isFirstInput{true};
-inline float lastX{window::width / 2};
-inline float lastY{window::height / 2};
-} // namespace cursor
-// clang-format on
-
 // GLFW callbacks
 void framebufferSizeCallback([[maybe_unused]] GLFWwindow* window, int width,
                              int height) {

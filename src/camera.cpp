@@ -61,13 +61,13 @@ void Camera::processKeyboardInput(GLFWwindow* window) {
     m_position += m_front * cameraSpeed;
 
   if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-    m_position -= glm::normalize(glm::cross(m_front, m_up)) * cameraSpeed;
+    m_position -= m_right * cameraSpeed;
 
   if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
     m_position -= m_front * cameraSpeed;
 
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-    m_position += glm::normalize(glm::cross(m_front, m_up)) * cameraSpeed;
+    m_position += m_right * cameraSpeed;
 }
 
 void Camera::processMouseInput(double offsetX, double offsetY,
