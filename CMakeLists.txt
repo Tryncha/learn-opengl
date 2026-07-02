@@ -1,56 +1,75 @@
-cmake_minimum_required(VERSION 3.10.0)
+cmake_minimum_required(VERSION 3.12.0)
 project(learn-opengl VERSION 0.1.0 LANGUAGES C CXX)
 
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
 
-add_executable(
-  ${PROJECT_NAME}
-  src/glad.c
-  src/camera.cpp
-  src/main.cpp
-  src/shader.cpp
-  src/stb_image.cpp
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_library(
+  lgl-common STATIC
+  common/glad.c
+  common/stb_image.cpp
+  common/camera.cpp
+  common/shader.cpp
 )
 
 target_include_directories(
-  ${PROJECT_NAME} PRIVATE
+  lgl-common PUBLIC
   include
-)
-
-target_compile_features(
-  ${PROJECT_NAME} PRIVATE
-  cxx_std_23
+  common
 )
 
 target_link_libraries(
-  ${PROJECT_NAME} PRIVATE
+  lgl-common PUBLIC
   glfw
   opengl32
   glm::glm
 )
 
-target_compile_options(
-  ${PROJECT_NAME} PRIVATE
-  -Wall
-  -Wextra
-  -Wpedantic
-  -Wconversion
-  -Wsign-conversion
-  -Wshadow
-)
-
-target_compile_options(
-  ${PROJECT_NAME} PRIVATE
-  $<$<CONFIG:Debug>:-g>
-  $<$<CONFIG:Debug>:-ggdb>
-  $<$<CONFIG:Release>:-O2>
-  $<$<CONFIG:Release>:-DNDEBUG>
-)
-
 # Ignore warnings from glad.c
 set_source_files_properties(
-  src/glad.c
+  common/glad.c
   PROPERTIES
   COMPILE_OPTIONS "-w"
 )
+
+function(add_chapter_target chapter_name chapter_sources)
+  add_executable(
+    ${chapter_name}
+    ${chapter_sources}
+  )
+
+  target_link_libraries(
+    ${chapter_name} PRIVATE
+    lgl-common
+  )
+
+  target_compile_options(
+    ${chapter_name} PRIVATE
+    -Wall
+    -Wextra
+    -Wpedantic
+    -Wconversion
+    -Wsign-conversion
+    -Wshadow
+    $<$<CONFIG:Debug>:-g>
+    $<$<CONFIG:Debug>:-ggdb>
+    $<$<CONFIG:Release>:-O2>
+    $<$<CONFIG:Release>:-DNDEBUG>
+  )
+
+  target_compile_definitions(
+    ${chapter_name} PRIVATE
+    CHAPTER_DIR="${CMAKE_CURRENT_SOURCE_DIR}/src"
+  )
+
+  set_target_properties(
+    ${chapter_name} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+  )
+endfunction()
+
+add_subdirectory(1-getting-started)
+add_subdirectory(2-lighting)

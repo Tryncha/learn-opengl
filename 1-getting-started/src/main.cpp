@@ -9,6 +9,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
+#include <string>
 
 #include "camera.h"
 #include "constants.h"
@@ -102,7 +103,9 @@ int main(int, char**) {
   // configure global opengl state
   glEnable(GL_DEPTH_TEST);
 
-  Shader ourShader{"src/shaders/vertex.glsl", "src/shaders/fragment.glsl"};
+  Shader ourShader{
+      (std::string(CHAPTER_DIR) + "/shaders/vertex.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/fragment.glsl").c_str()};
 
   GLuint VBO{};
   GLuint VAO{};
@@ -148,7 +151,8 @@ int main(int, char**) {
   // tell stb_image.h to flip loaded texture's on the y-axis.
   stbi_set_flip_vertically_on_load(true);
 
-  const char* texturePath1{"src/textures/container.jpg"};
+  const char* texturePath1{
+      (std::string(CHAPTER_DIR) + "/textures/container.jpg").c_str()};
   // load image, create texture and generate mipmaps
   unsigned char* textureData1{
       stbi_load(texturePath1, &width, &height, &nrChannels, 0)};
@@ -174,7 +178,8 @@ int main(int, char**) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  const char* texturePath2{"src/textures/awesomeface.png"};
+  const char* texturePath2{
+      (std::string(CHAPTER_DIR) + "/textures/awesomeface.png").c_str()};
   unsigned char* textureData2{
       stbi_load(texturePath2, &width, &height, &nrChannels, 0)};
 
