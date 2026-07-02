@@ -34,7 +34,24 @@ Camera::Camera(float posX, float posY, float posZ, float upX, float upY,
 float Camera::getFov() const { return m_fov; }
 
 glm::mat4 Camera::getViewMatrix() const {
-  return glm::lookAt(m_position, m_position + m_front, m_up);
+  // manual process to create lookAt matrix
+  glm::vec3 axisZ{glm::normalize(m_position - (m_position + m_front))};
+  glm::vec3 axisX{glm::normalize(glm::cross(glm::normalize(m_up), axisZ))};
+  glm::vec3 axisY{glm::cross(axisZ, axisX)};
+
+  // glm::mat4 receives the columns of the matrix, not the rows
+  glm::mat4 myLookAt{
+      glm::mat4(glm::vec4(axisX.x, axisY.x, axisZ.x, 0.0f),
+                glm::vec4(axisX.y, axisY.y, axisZ.y, 0.0f),
+                glm::vec4(axisX.z, axisY.z, axisZ.z, 0.0f),
+                glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)) *
+      glm::mat4(glm::vec4(1.0f, 0.0f, 0.0f, 0.0f),
+                glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+                glm::vec4(0.0f, 0.0f, 1.0f, 0.0f),
+                glm::vec4(-m_position.x, -m_position.y, -m_position.z, 1.0f))};
+
+  return myLookAt;
+  // return glm::lookAt(m_position, m_position + m_front, m_up);
 }
 
 // member functions
