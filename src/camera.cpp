@@ -68,6 +68,9 @@ void Camera::processKeyboardInput(GLFWwindow* window) {
 
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     m_position += m_right * cameraSpeed;
+
+  // this one-line keeps the user at the ground level (xz plane)
+  m_position.y = 0.0f;
 }
 
 void Camera::processMouseInput(double offsetX, double offsetY,
