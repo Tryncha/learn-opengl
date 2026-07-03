@@ -62,7 +62,7 @@ function(add_chapter_target chapter_name chapter_sources)
 
   target_compile_definitions(
     ${chapter_name} PRIVATE
-    CHAPTER_DIR="${CMAKE_CURRENT_SOURCE_DIR}/src"
+    CHAPTER_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
   )
 
   set_target_properties(
