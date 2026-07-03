@@ -120,8 +120,8 @@ int main(int, char**) {
   glEnable(GL_DEPTH_TEST);
 
   Shader ourShader{
-      (std::string(CHAPTER_DIR) + "/src/shaders/vertex.glsl").c_str(),
-      (std::string(CHAPTER_DIR) + "/src/shaders/fragment.glsl").c_str()};
+      (std::string(CHAPTER_DIR) + "/shaders/vertex.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/fragment.glsl").c_str()};
 
   GLuint VBO{};
   GLuint VAO{};
