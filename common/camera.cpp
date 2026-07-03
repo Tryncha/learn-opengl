@@ -53,21 +53,32 @@ void Camera::updateVectors() {
 }
 // clang-format on
 
+// Minecraft-like camera controls
 void Camera::processKeyboardInput(GLFWwindow* window) {
   float cameraSpeed{m_baseSpeed * timing::deltaTime};
 
   // WASD controls
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-    m_position += m_front * cameraSpeed;
+    // to keep user on xz plane
+    m_position += glm::vec3(m_front.x, 0.0f, m_front.z) * cameraSpeed;
 
   if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
     m_position -= m_right * cameraSpeed;
 
   if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-    m_position -= m_front * cameraSpeed;
+    // to keep user on xz plane
+    m_position -= glm::vec3(m_front.x, 0.0f, m_front.z) * cameraSpeed;
 
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     m_position += m_right * cameraSpeed;
+
+  // go up
+  if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+    m_position += m_worldUp * cameraSpeed;
+
+  // go down
+  if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+    m_position -= m_worldUp * cameraSpeed;
 }
 
 void Camera::processMouseInput(double offsetX, double offsetY,
