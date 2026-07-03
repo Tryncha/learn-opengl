@@ -33,15 +33,9 @@ void framebufferSizeCallback([[maybe_unused]] GLFWwindow* window, int width,
   glViewport(0, 0, width, height);
 }
 
-void mouseButtonCallback(GLFWwindow* window, int button, int action,
-                         [[maybe_unused]] int mods) {
-  if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-    // hides the cursor and captures it (makes it stay in the center)
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-}
-
 // mouse/cursor controls
-void cursorPosCallback(GLFWwindow* window, double posX, double posY) {
+void cursorPosCallback([[maybe_unused]] GLFWwindow* window, double posX,
+                       double posY) {
   auto& camera{*static_cast<Camera*>(glfwGetWindowUserPointer(window))};
 
   if (cursor::isFirstInput) {
@@ -57,8 +51,7 @@ void cursorPosCallback(GLFWwindow* window, double posX, double posY) {
   cursor::lastX = static_cast<float>(posX);
   cursor::lastY = static_cast<float>(posY);
 
-  if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
-    camera.processMouseInput(offsetX, offsetY);
+  camera.processMouseInput(offsetX, offsetY);
 }
 
 // offsetY means how much we scrolled vertically
@@ -73,7 +66,7 @@ void processInput(GLFWwindow* window) {
   auto& camera{*static_cast<Camera*>(glfwGetWindowUserPointer(window))};
 
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    glfwSetWindowShouldClose(window, true);
 
   camera.processKeyboardInput(window);
 }
@@ -106,9 +99,11 @@ int main(int, char**) {
 
   // callbacks
   glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
-  glfwSetMouseButtonCallback(window, mouseButtonCallback);
   glfwSetCursorPosCallback(window, cursorPosCallback);
   glfwSetScrollCallback(window, scrollCallback);
+
+  // hides the cursor and captures it (makes it stay in the center)
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
   if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
     std::cout << "Failed to initialize GLAD.\n";
