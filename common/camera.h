@@ -22,6 +22,7 @@ class Camera {
 
   // getters/setters
   float getFov() const;
+  glm::vec3 getPosition() const;
   glm::mat4 getViewMatrix() const;
 
   // member functions

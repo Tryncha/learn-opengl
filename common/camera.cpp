@@ -33,6 +33,8 @@ Camera::Camera(float posX, float posY, float posZ, float upX, float upY,
 // getters/setters
 float Camera::getFov() const { return m_fov; }
 
+glm::vec3 Camera::getPosition() const { return m_position; }
+
 glm::mat4 Camera::getViewMatrix() const {
   return glm::lookAt(m_position, m_position + m_front, m_up);
 }

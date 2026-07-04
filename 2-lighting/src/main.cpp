@@ -2,7 +2,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 // clang-format on
-#include <stb_image/stb_image.h>
 
 #include <array>
 #include <glm/glm.hpp>
@@ -28,8 +27,8 @@ inline float lastX{window::width  / 2};
 inline float lastY{window::height / 2};
 }  // namespace cursor
 
-namespace lighting {
-inline glm::vec3 position(1.2f, 1.0f, 2.0f);
+namespace light {
+inline glm::vec3 position{1.2f, 1.0f, 2.0f};
 }  // namespace lighting
 // clang-format on
 
@@ -122,9 +121,9 @@ int main(int, char**) {
   // configure global opengl state
   glEnable(GL_DEPTH_TEST);
 
-  Shader lightShader{
-      (std::string(CHAPTER_DIR) + "/shaders/light_vertex.glsl").c_str(),
-      (std::string(CHAPTER_DIR) + "/shaders/light_fragment.glsl").c_str()};
+  Shader cubeShader{
+      (std::string(CHAPTER_DIR) + "/shaders/cube_vertex.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/cube_fragment.glsl").c_str()};
   Shader lampShader{
       (std::string(CHAPTER_DIR) + "/shaders/lamp_vertex.glsl").c_str(),
       (std::string(CHAPTER_DIR) + "/shaders/lamp_fragment.glsl").c_str()};
@@ -144,9 +143,14 @@ int main(int, char**) {
   glBindVertexArray(cubeVAO);
 
   // position attribute
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
                         reinterpret_cast<void*>(0));
   glEnableVertexAttribArray(0);
+
+  // normal vector attribute
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
+                        reinterpret_cast<void*>(3 * sizeof(float)));
+  glEnableVertexAttribArray(1);
 
   // 2. lamp's VAO config
   GLuint lampVAO{};
@@ -158,7 +162,7 @@ int main(int, char**) {
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
   // position attribute
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
                         reinterpret_cast<void*>(0));
   glEnableVertexAttribArray(0);
 
@@ -176,20 +180,22 @@ int main(int, char**) {
     const float aspectRatio{static_cast<float>(window::width) /
                             static_cast<float>(window::height)};
 
-    // light object
-    lightShader.use();
-    lightShader.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
-    lightShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+    // cube object
+    cubeShader.use();
+    cubeShader.setVec3("cubeColor", glm::vec3(1.0f, 0.5f, 0.31f));
+    cubeShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+    cubeShader.setVec3("lightPosition", light::position);
+    cubeShader.setVec3("viewPosition", camera.getPosition());
 
     // model, view and projection matrices
-    glm::mat4 lightProjection{glm::perspective(glm::radians(camera.getFov()),
-                                               aspectRatio, 0.1f, 100.0f)};
+    glm::mat4 cubeProjection{glm::perspective(glm::radians(camera.getFov()),
+                                              aspectRatio, 0.1f, 100.0f)};
 
-    lightShader.setMat4("projection", lightProjection);
-    lightShader.setMat4("view", camera.getViewMatrix());
+    cubeShader.setMat4("projection", cubeProjection);
+    cubeShader.setMat4("view", camera.getViewMatrix());
 
-    glm::mat4 lightModel{glm::mat4(1.0)};
-    lightShader.setMat4("model", lightModel);
+    glm::mat4 cubeModel{glm::mat4(1.0)};
+    cubeShader.setMat4("model", cubeModel);
 
     glBindVertexArray(cubeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -205,7 +211,7 @@ int main(int, char**) {
     lampShader.setMat4("view", camera.getViewMatrix());
 
     glm::mat4 lampModel{glm::mat4(1.0)};
-    lampModel = glm::translate(lampModel, lighting::position);
+    lampModel = glm::translate(lampModel, light::position);
     lampModel = glm::scale(lampModel, glm::vec3(0.2f));
 
     lampShader.setMat4("model", lampModel);
@@ -221,8 +227,8 @@ int main(int, char**) {
   glDeleteVertexArrays(1, &cubeVAO);
   glDeleteVertexArrays(1, &lampVAO);
 
+  cubeShader.remove();
   lampShader.remove();
-  lightShader.remove();
 
   glfwTerminate();
   return 0;
