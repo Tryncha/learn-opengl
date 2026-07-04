@@ -2,7 +2,6 @@
 #define DATA_H
 
 #include <array>
-#include <glm/glm.hpp>
 
 // clang-format off
 namespace data {

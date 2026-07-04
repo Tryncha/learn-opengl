@@ -2,8 +2,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 // clang-format on
-
 #include <array>
+#include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -26,10 +26,6 @@ inline bool isFirstInput{true};
 inline float lastX{window::width  / 2};
 inline float lastY{window::height / 2};
 }  // namespace cursor
-
-namespace light {
-inline glm::vec3 position{1.2f, 1.0f, 2.0f};
-}  // namespace lighting
 // clang-format on
 
 // GLFW callbacks
@@ -177,6 +173,12 @@ int main(int, char**) {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // light properties
+    glm::vec3 lightPosition{1.5f * std::sin(static_cast<float>(glfwGetTime())),
+                            0.0f,
+                            1.5f * std::cos(static_cast<float>(glfwGetTime()))};
+
+    // transformation matrices
     const float aspectRatio{static_cast<float>(window::width) /
                             static_cast<float>(window::height)};
 
@@ -184,7 +186,7 @@ int main(int, char**) {
     cubeShader.use();
     cubeShader.setVec3("cubeColor", glm::vec3(1.0f, 0.5f, 0.31f));
     cubeShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-    cubeShader.setVec3("lightPosition", light::position);
+    cubeShader.setVec3("lightPosition", lightPosition);
     cubeShader.setVec3("viewPosition", camera.getPosition());
 
     // model, view and projection matrices
@@ -211,7 +213,7 @@ int main(int, char**) {
     lampShader.setMat4("view", camera.getViewMatrix());
 
     glm::mat4 lampModel{glm::mat4(1.0)};
-    lampModel = glm::translate(lampModel, light::position);
+    lampModel = glm::translate(lampModel, lightPosition);
     lampModel = glm::scale(lampModel, glm::vec3(0.2f));
 
     lampShader.setMat4("model", lampModel);
