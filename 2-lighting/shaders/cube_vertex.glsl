@@ -4,23 +4,23 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+uniform vec3 lightPosition;
+
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aNormal;
 
 out vec3 FragPosition;
 out vec3 FragNormal;
+out vec3 ViewLightPosition;
 
 void main() {
   gl_Position = projection * view * model * vec4(aPosition, 1.0);
-  FragPosition = vec3(model * vec4(aPosition, 1.0));
 
-  // we didn't do any scalingon the object, so there was not really
-  // a need to use this normal matrix, otherwise is necessary.
-  // also, it is better do this calc on the CPU and send it
-  // to the GPU using an uniform.
+  mat3 normalMat = mat3(transpose(inverse(view * model)));
 
-  // mat3 normalMat = mat3(transpose(inverse(model)));
-  // FragNormal = normalMat * aNormal;
+  FragPosition = vec3(view * model * vec4(aPosition, 1.0));
+  FragNormal = normalMat * aNormal;
 
-  FragNormal = aNormal;
+  // transform world-space light position to view-space light position
+  ViewLightPosition = vec3(view * vec4(lightPosition, 1.0));
 }

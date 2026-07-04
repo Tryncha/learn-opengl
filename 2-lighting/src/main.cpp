@@ -187,7 +187,6 @@ int main(int, char**) {
     cubeShader.setVec3("cubeColor", glm::vec3(1.0f, 0.5f, 0.31f));
     cubeShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
     cubeShader.setVec3("lightPosition", lightPosition);
-    cubeShader.setVec3("viewPosition", camera.getPosition());
 
     // model, view and projection matrices
     glm::mat4 cubeProjection{glm::perspective(glm::radians(camera.getFov()),
