@@ -2,8 +2,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 // clang-format on
-
 #include <array>
+#include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -19,6 +19,8 @@ namespace window {
 constexpr bool openFullscreen{false};
 constexpr int width {1920};
 constexpr int height{1080};
+constexpr float aspectRatio{static_cast<float>(width) /
+                            static_cast<float>(height)};
 }  // namespace window
 
 namespace cursor {
@@ -26,10 +28,6 @@ inline bool isFirstInput{true};
 inline float lastX{window::width  / 2};
 inline float lastY{window::height / 2};
 }  // namespace cursor
-
-namespace light {
-inline glm::vec3 position{1.2f, 1.0f, 2.0f};
-}  // namespace lighting
 // clang-format on
 
 // GLFW callbacks
@@ -177,19 +175,33 @@ int main(int, char**) {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    const float aspectRatio{static_cast<float>(window::width) /
-                            static_cast<float>(window::height)};
+    // light properties
+    glm::vec3 lightPosition{1.2f, 1.0f, 2.0f};
+    glm::vec3 lightColor{std::sin(static_cast<float>(2.0f * glfwGetTime())),
+                         std::sin(static_cast<float>(0.7f * glfwGetTime())),
+                         std::sin(static_cast<float>(1.3f * glfwGetTime()))};
+
+    glm::vec3 diffuseColor{lightColor * glm::vec3(0.5f)};
+    glm::vec3 ambientColor{diffuseColor * glm::vec3(0.2f)};
 
     // cube object
     cubeShader.use();
-    cubeShader.setVec3("cubeColor", glm::vec3(1.0f, 0.5f, 0.31f));
-    cubeShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-    cubeShader.setVec3("lightPosition", light::position);
+
+    cubeShader.setVec3("light.position", lightPosition);
+    cubeShader.setVec3("light.ambient", ambientColor);
+    cubeShader.setVec3("light.diffuse", diffuseColor);
+    cubeShader.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+
+    cubeShader.setVec3("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
+    cubeShader.setVec3("material.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
+    cubeShader.setVec3("material.specular", glm::vec3(0.5f, 0.5f, 0.5f));
+    cubeShader.setFloat("material.shininess", 32.0f);
+
     cubeShader.setVec3("viewPosition", camera.getPosition());
 
     // model, view and projection matrices
-    glm::mat4 cubeProjection{glm::perspective(glm::radians(camera.getFov()),
-                                              aspectRatio, 0.1f, 100.0f)};
+    glm::mat4 cubeProjection{glm::perspective(
+        glm::radians(camera.getFov()), window::aspectRatio, 0.1f, 100.0f)};
 
     cubeShader.setMat4("projection", cubeProjection);
     cubeShader.setMat4("view", camera.getViewMatrix());
@@ -204,14 +216,14 @@ int main(int, char**) {
     lampShader.use();
 
     // model, view and projection matrices
-    glm::mat4 lampProjection{glm::perspective(glm::radians(camera.getFov()),
-                                              aspectRatio, 0.1f, 100.0f)};
+    glm::mat4 lampProjection{glm::perspective(
+        glm::radians(camera.getFov()), window::aspectRatio, 0.1f, 100.0f)};
 
     lampShader.setMat4("projection", lampProjection);
     lampShader.setMat4("view", camera.getViewMatrix());
 
     glm::mat4 lampModel{glm::mat4(1.0)};
-    lampModel = glm::translate(lampModel, light::position);
+    lampModel = glm::translate(lampModel, lightPosition);
     lampModel = glm::scale(lampModel, glm::vec3(0.2f));
 
     lampShader.setMat4("model", lampModel);
