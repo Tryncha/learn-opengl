@@ -3,7 +3,6 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 #include <array>
-#include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -174,9 +173,7 @@ int main(int, char**) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // light properties
-    glm::vec3 lightPosition{1.5f * std::sin(static_cast<float>(glfwGetTime())),
-                            0.0f,
-                            1.5f * std::cos(static_cast<float>(glfwGetTime()))};
+    glm::vec3 lightPosition{1.2f, 1.0f, 2.0f};
 
     // transformation matrices
     const float aspectRatio{static_cast<float>(window::width) /
@@ -187,6 +184,7 @@ int main(int, char**) {
     cubeShader.setVec3("cubeColor", glm::vec3(1.0f, 0.5f, 0.31f));
     cubeShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
     cubeShader.setVec3("lightPosition", lightPosition);
+    cubeShader.setVec3("viewPosition", camera.getPosition());
 
     // model, view and projection matrices
     glm::mat4 cubeProjection{glm::perspective(glm::radians(camera.getFov()),
