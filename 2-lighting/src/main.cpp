@@ -189,8 +189,36 @@ int main(int, char**) {
 
   stbi_image_free(diffuseMapData);
 
+  // load and create a specular map
+  GLuint specularMap{};
+
+  glGenTextures(1, &specularMap);
+  glBindTexture(GL_TEXTURE_2D, specularMap);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  stbi_set_flip_vertically_on_load(true);
+
+  const char* specularMapPath{
+      (std::string(CHAPTER_DIR) + "/textures/container2_specular.png").c_str()};
+  unsigned char* specularMapData{
+      stbi_load(specularMapPath, &width, &height, &nrChannels, 0)};
+
+  if (specularMapData) {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, specularMapData);
+  } else {
+    std::cerr << "Failed to load specular map.\n";
+  }
+
+  stbi_image_free(specularMapData);
+
   cubeShader.use();
   cubeShader.setInt("material.diffuse", 0);
+  cubeShader.setInt("material.specular", 1);
 
   // 2. lamp's VAO config
   GLuint lampVAO{};
@@ -228,7 +256,6 @@ int main(int, char**) {
     cubeShader.setVec3("light.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));
     cubeShader.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
 
-    cubeShader.setVec3("material.specular", glm::vec3(0.5f, 0.5f, 0.5f));
     cubeShader.setFloat("material.shininess", 32.0f);
 
     cubeShader.setVec3("viewPosition", camera.getPosition());
@@ -246,6 +273,10 @@ int main(int, char**) {
     // bind diffuse map
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, diffuseMap);
+
+    // bind specular map
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, specularMap);
 
     glBindVertexArray(cubeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
