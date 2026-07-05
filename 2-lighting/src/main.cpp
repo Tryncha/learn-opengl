@@ -181,15 +181,15 @@ int main(int, char**) {
                          std::sin(static_cast<float>(0.7f * glfwGetTime())),
                          std::sin(static_cast<float>(1.3f * glfwGetTime()))};
 
-    glm::vec3 diffuseColor{lightColor * glm::vec3(0.5f)};
-    glm::vec3 ambientColor{diffuseColor * glm::vec3(0.2f)};
+    glm::vec3 lightDiffuse{lightColor * glm::vec3(0.5f)};
+    glm::vec3 lightAmbient{lightDiffuse * glm::vec3(0.2f)};
 
     // cube object
     cubeShader.use();
 
     cubeShader.setVec3("light.position", lightPosition);
-    cubeShader.setVec3("light.ambient", ambientColor);
-    cubeShader.setVec3("light.diffuse", diffuseColor);
+    cubeShader.setVec3("light.ambient", lightAmbient);
+    cubeShader.setVec3("light.diffuse", lightDiffuse);
     cubeShader.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
 
     cubeShader.setVec3("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
