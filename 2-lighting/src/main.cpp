@@ -216,7 +216,7 @@ int main(int, char**) {
   // diffuse map loading
   unsigned int diffuseMap{loadTexture("resources/box_diffuse.png")};
   // specular map laoding
-  unsigned int specularMap{loadTexture("resources/box_specular.png")};
+  unsigned int specularMap{loadTexture("resources/box_specular_colors.png")};
 
   cubeShader.use();
   cubeShader.setInt("material.diffuse", 0);
