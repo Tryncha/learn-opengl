@@ -66,6 +66,13 @@ void scrollCallback([[maybe_unused]] GLFWwindow* window,
   camera.processScrollInput(offsetY);
 }
 
+// deltaTime calculation to keep consistent the camera speed
+void stabilizeFrame() {
+  timing::currentFrame = static_cast<float>(glfwGetTime());
+  timing::deltaTime = timing::currentFrame - timing::lastFrame;
+  timing::lastFrame = timing::currentFrame;
+}
+
 // process input
 void processInput(GLFWwindow* window) {
   auto& camera{*static_cast<Camera*>(glfwGetWindowUserPointer(window))};
@@ -121,13 +128,6 @@ unsigned int loadTexture(const char* texturePath, bool flipVertically = false) {
 
   stbi_image_free(textureData);
   return textureId;
-}
-
-void stabilizeFrame() {
-  // deltaTime calculation to keep consistent the camera speed
-  timing::currentFrame = static_cast<float>(glfwGetTime());
-  timing::deltaTime = timing::currentFrame - timing::lastFrame;
-  timing::lastFrame = timing::currentFrame;
 }
 
 int main(int, char**) {
