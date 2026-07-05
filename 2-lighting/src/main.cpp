@@ -214,6 +214,7 @@ int main(int, char**) {
 
     // lamp object (light source)
     lampShader.use();
+    lampShader.setVec3("lightColor", lightColor);
 
     // model, view and projection matrices
     glm::mat4 lampProjection{glm::perspective(
