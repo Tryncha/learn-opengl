@@ -5,7 +5,7 @@
 #include <stb_image/stb_image.h>
 
 #include <array>
-#include <cmath>
+#include <cstddef>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -123,6 +123,13 @@ unsigned int loadTexture(const char* texturePath, bool flipVertically = false) {
   return textureId;
 }
 
+void stabilizeFrame() {
+  // deltaTime calculation to keep consistent the camera speed
+  timing::currentFrame = static_cast<float>(glfwGetTime());
+  timing::deltaTime = timing::currentFrame - timing::lastFrame;
+  timing::lastFrame = timing::currentFrame;
+}
+
 int main(int, char**) {
   if (!glfwInit()) {
     std::cerr << "Failed to initialize GLFW.\n";
@@ -189,18 +196,20 @@ int main(int, char**) {
 
   glBindVertexArray(cubeVAO);
 
+  constexpr std::size_t stride{8 * sizeof(float)};
+
   // position attribute
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride,
                         reinterpret_cast<void*>(0));
   glEnableVertexAttribArray(0);
 
   // normal vector attribute
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,
                         reinterpret_cast<void*>(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
 
   // texture coords attribute
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride,
                         reinterpret_cast<void*>(6 * sizeof(float)));
   glEnableVertexAttribArray(2);
 
@@ -223,16 +232,12 @@ int main(int, char**) {
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
   // position attribute
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride,
                         reinterpret_cast<void*>(0));
   glEnableVertexAttribArray(0);
 
   while (!glfwWindowShouldClose(window)) {
-    // deltaTime calculation to keep consistent the camera speed
-    timing::currentFrame = static_cast<float>(glfwGetTime());
-    timing::deltaTime = timing::currentFrame - timing::lastFrame;
-    timing::lastFrame = timing::currentFrame;
-
+    stabilizeFrame();
     processInput(window);
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -244,13 +249,14 @@ int main(int, char**) {
     // cube object
     cubeShader.use();
 
+    // clang-format off
     cubeShader.setVec3("light.position", lightPosition);
-    cubeShader.setVec3("light.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
-    cubeShader.setVec3("light.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));
+    cubeShader.setVec3("light.ambient",  glm::vec3(0.2f, 0.2f, 0.2f));
+    cubeShader.setVec3("light.diffuse",  glm::vec3(0.5f, 0.5f, 0.5f));
     cubeShader.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+    // clang-format on
 
     cubeShader.setFloat("material.shininess", 32.0f);
-
     cubeShader.setVec3("viewPosition", camera.getPosition());
 
     // model, view and projection matrices
