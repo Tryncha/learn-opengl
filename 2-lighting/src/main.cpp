@@ -263,14 +263,17 @@ int main(int, char**) {
     cubeShader.setVec3("light.position",  camera.getPosition());
     cubeShader.setVec3("light.direction", camera.getFront());
 
+    // lights
     cubeShader.setVec3("light.ambient",  glm::vec3(0.2f, 0.2f, 0.2f));
     cubeShader.setVec3("light.diffuse",  glm::vec3(0.5f, 0.5f, 0.5f));
     cubeShader.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
 
+    // attenuation values
     cubeShader.setFloat("light.constant",  1.0f);
     cubeShader.setFloat("light.linear",    0.09f);
     cubeShader.setFloat("light.quadratic", 0.032f);
 
+    // spotlight cutoff
     cubeShader.setFloat("light.innerCutOff", std::cos(glm::radians(12.5f)));
     cubeShader.setFloat("light.outerCutOff", std::cos(glm::radians(17.5f)));
     // clang-format on

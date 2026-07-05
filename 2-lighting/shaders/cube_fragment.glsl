@@ -76,5 +76,4 @@ void main() {
   // applying the light to the fragment
   vec3 finalLight = ambient + diffuse + specular;
   FragColor = vec4(finalLight, 1.0);
-
 }
