@@ -271,7 +271,8 @@ int main(int, char**) {
     cubeShader.setFloat("light.linear",    0.09f);
     cubeShader.setFloat("light.quadratic", 0.032f);
 
-    cubeShader.setFloat("light.cutOff", std::cos(glm::radians(12.5f)));
+    cubeShader.setFloat("light.innerCutOff", std::cos(glm::radians(12.5f)));
+    cubeShader.setFloat("light.outerCutOff", std::cos(glm::radians(17.5f)));
     // clang-format on
 
     cubeShader.setFloat("material.shininess", 32.0f);

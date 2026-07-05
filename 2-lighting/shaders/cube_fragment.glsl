@@ -15,7 +15,8 @@ struct Light {
   float quadratic;
 
   // spotlight cutoff
-  float cutOff;
+  float innerCutOff;
+  float outerCutOff;
 };
 
 struct Material {
@@ -41,34 +42,39 @@ void main() {
 
   vec3 lightDirection = normalize(light.position - FragPosition);
 
+  // spotlight calcualtions
   float theta = dot(lightDirection, normalize(-light.direction));
+  float epsilon = light.innerCutOff - light.outerCutOff;
+  float spotlightIntensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0); 
 
-  // check if lighting is inside the spotlight cone
-  // remember that we're working with angles as cosines instead of degrees so a '>' is used
-  if(theta > light.cutOff) {
-    // ambient light
-    vec3 ambient = light.ambient * texDiffuse;
+  // ambient light
+  vec3 ambient = light.ambient * texDiffuse;
 
-    // diffuse light
-    float diffuseIntensity = max(dot(FragNormal, lightDirection), 0.0);
-    vec3 diffuse = light.diffuse * (diffuseIntensity * texDiffuse);
+  // diffuse light
+  float diffuseIntensity = max(dot(FragNormal, lightDirection), 0.0);
+  vec3 diffuse = light.diffuse * (diffuseIntensity * texDiffuse);
 
-    // specular light
-    vec3 viewDirection = normalize(viewPosition - FragPosition);
-    vec3 reflectDirection = reflect(-lightDirection, FragNormal);
+  // specular light
+  vec3 viewDirection = normalize(viewPosition - FragPosition);
+  vec3 reflectDirection = reflect(-lightDirection, FragNormal);
 
-    float specularIntensity = pow(max(dot(viewDirection, reflectDirection), 0.0), material.shininess);
-    vec3 specular = light.specular * (specularIntensity * texSpecular);
+  float specularIntensity = pow(max(dot(viewDirection, reflectDirection), 0.0), material.shininess);
+  vec3 specular = light.specular * (specularIntensity * texSpecular);
 
-    // light attenuation 
-    float distance = length(light.position - FragPosition);
-    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
+  // we'll leave ambient unaffected so we always have a little light
+  diffuse *= spotlightIntensity;
+  specular *= spotlightIntensity;
 
-    // applying the light to the fragment
-    vec3 finalLight = (ambient + diffuse + specular) * attenuation;
-    FragColor = vec4(finalLight, 1.0);
-  } else {
-    // use ambient light so scene isn't completely dark outside the spotlight
-    FragColor = vec4(light.ambient * vec3(texDiffuse), 1.0);
-  }
+  // light attenuation 
+  float distance = length(light.position - FragPosition);
+  float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
+
+  ambient *= attenuation;
+  diffuse *= attenuation;
+  specular *= attenuation;
+
+  // applying the light to the fragment
+  vec3 finalLight = ambient + diffuse + specular;
+  FragColor = vec4(finalLight, 1.0);
+
 }
