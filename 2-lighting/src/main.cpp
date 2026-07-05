@@ -11,6 +11,7 @@
 
 #include "camera.h"
 #include "data.h"
+#include "materials.h"
 #include "shader.h"
 
 // clang-format off
@@ -177,25 +178,23 @@ int main(int, char**) {
 
     // light properties
     glm::vec3 lightPosition{1.2f, 1.0f, 2.0f};
-    glm::vec3 lightColor{std::sin(static_cast<float>(2.0f * glfwGetTime())),
-                         std::sin(static_cast<float>(0.7f * glfwGetTime())),
-                         std::sin(static_cast<float>(1.3f * glfwGetTime()))};
-
-    glm::vec3 lightDiffuse{lightColor * glm::vec3(0.5f)};
-    glm::vec3 lightAmbient{lightDiffuse * glm::vec3(0.2f)};
 
     // cube object
     cubeShader.use();
 
     cubeShader.setVec3("light.position", lightPosition);
-    cubeShader.setVec3("light.ambient", lightAmbient);
-    cubeShader.setVec3("light.diffuse", lightDiffuse);
+    cubeShader.setVec3("light.ambient", glm::vec3(1.0f, 1.0f, 1.0f));
+    cubeShader.setVec3("light.diffuse", glm::vec3(1.0f, 1.0f, 1.0f));
     cubeShader.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
 
-    cubeShader.setVec3("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
-    cubeShader.setVec3("material.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
-    cubeShader.setVec3("material.specular", glm::vec3(0.5f, 0.5f, 0.5f));
-    cubeShader.setFloat("material.shininess", 32.0f);
+    // following the instructions from
+    // http://devernay.free.fr/cours/opengl/materials.html
+    Material material{materials::pearl};
+
+    cubeShader.setVec3("material.ambient", material.ambient);
+    cubeShader.setVec3("material.diffuse", material.diffuse);
+    cubeShader.setVec3("material.specular", material.specular);
+    cubeShader.setFloat("material.shininess", material.shininess * 128.0f);
 
     cubeShader.setVec3("viewPosition", camera.getPosition());
 
@@ -214,7 +213,6 @@ int main(int, char**) {
 
     // lamp object (light source)
     lampShader.use();
-    lampShader.setVec3("lightColor", lightColor);
 
     // model, view and projection matrices
     glm::mat4 lampProjection{glm::perspective(
