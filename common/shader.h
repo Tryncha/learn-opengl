@@ -39,7 +39,7 @@ class Shader {
   void setMat4(const std::string& name, const glm::mat4& mat) const;
 
  private:
-  GLuint m_shaderProgram;
+  unsigned int m_shaderProgram;
 };
 
 #endif

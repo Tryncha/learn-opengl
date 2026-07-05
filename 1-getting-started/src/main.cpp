@@ -162,8 +162,7 @@ int main(int, char**) {
   // tell stb_image.h to flip loaded texture's on the y-axis.
   stbi_set_flip_vertically_on_load(true);
 
-  const char* texturePath1{
-      (std::string(CHAPTER_DIR) + "/textures/container.jpg").c_str()};
+  const char* texturePath1{"resources/container.jpg"};
   // load image, create texture and generate mipmaps
   unsigned char* textureData1{
       stbi_load(texturePath1, &width, &height, &nrChannels, 0)};
@@ -189,8 +188,7 @@ int main(int, char**) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  const char* texturePath2{
-      (std::string(CHAPTER_DIR) + "/textures/awesomeface.png").c_str()};
+  const char* texturePath2{"resources/awesomeface.png"};
   unsigned char* textureData2{
       stbi_load(texturePath2, &width, &height, &nrChannels, 0)};
 

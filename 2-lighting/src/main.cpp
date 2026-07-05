@@ -76,6 +76,53 @@ void processInput(GLFWwindow* window) {
   camera.processKeyboardInput(window);
 }
 
+// utility functions
+unsigned int loadTexture(const char* texturePath, bool flipVertically = false) {
+  int width{};
+  int height{};
+  int nrChannels{};
+
+  unsigned int textureId{};
+  glGenTextures(1, &textureId);
+
+  unsigned char* textureData{
+      stbi_load(texturePath, &width, &height, &nrChannels, 0)};
+
+  if (textureData) {
+    unsigned int format{};
+    switch (nrChannels) {
+      case 1:
+        format = GL_RED;
+        break;
+      case 3:
+        format = GL_RGB;
+        break;
+      case 4:
+        format = GL_RGBA;
+        break;
+    }
+
+    glBindTexture(GL_TEXTURE_2D, textureId);
+    glTexImage2D(GL_TEXTURE_2D, 0, static_cast<int>(format), width, height, 0,
+                 format, GL_UNSIGNED_BYTE, textureData);
+
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                    GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    stbi_set_flip_vertically_on_load(flipVertically);
+  } else {
+    std::cerr << "Failed to load texture.\nCheck path: " << texturePath << '\n';
+  }
+
+  stbi_image_free(textureData);
+  return textureId;
+}
+
 int main(int, char**) {
   if (!glfwInit()) {
     std::cerr << "Failed to initialize GLFW.\n";
@@ -130,8 +177,8 @@ int main(int, char**) {
 
   // reminder: sizeof(float) == 4 bytes
   // 1. object's VAO (and VBO) config
-  GLuint VBO{};
-  GLuint cubeVAO{};
+  unsigned int VBO{};
+  unsigned int cubeVAO{};
 
   glGenVertexArrays(1, &cubeVAO);
   glGenBuffers(1, &VBO);
@@ -158,70 +205,16 @@ int main(int, char**) {
   glEnableVertexAttribArray(2);
 
   // diffuse map loading
-  int width{};
-  int height{};
-  int nrChannels{};
-
-  // load and create a diffuse map
-  GLuint diffuseMap{};
-
-  glGenTextures(1, &diffuseMap);
-  glBindTexture(GL_TEXTURE_2D, diffuseMap);
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  stbi_set_flip_vertically_on_load(true);
-
-  const char* diffuseMapPath{
-      (std::string(CHAPTER_DIR) + "/textures/container2.png").c_str()};
-  unsigned char* diffuseMapData{
-      stbi_load(diffuseMapPath, &width, &height, &nrChannels, 0)};
-
-  if (diffuseMapData) {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, diffuseMapData);
-  } else {
-    std::cerr << "Failed to load diffuse map.\n";
-  }
-
-  stbi_image_free(diffuseMapData);
-
-  // load and create a specular map
-  GLuint specularMap{};
-
-  glGenTextures(1, &specularMap);
-  glBindTexture(GL_TEXTURE_2D, specularMap);
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  stbi_set_flip_vertically_on_load(true);
-
-  const char* specularMapPath{
-      (std::string(CHAPTER_DIR) + "/textures/container2_specular.png").c_str()};
-  unsigned char* specularMapData{
-      stbi_load(specularMapPath, &width, &height, &nrChannels, 0)};
-
-  if (specularMapData) {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, specularMapData);
-  } else {
-    std::cerr << "Failed to load specular map.\n";
-  }
-
-  stbi_image_free(specularMapData);
+  unsigned int diffuseMap{loadTexture("resources/box_diffuse.png")};
+  // specular map laoding
+  unsigned int specularMap{loadTexture("resources/box_specular.png")};
 
   cubeShader.use();
   cubeShader.setInt("material.diffuse", 0);
   cubeShader.setInt("material.specular", 1);
 
   // 2. lamp's VAO config
-  GLuint lampVAO{};
+  unsigned int lampVAO{};
 
   glGenVertexArrays(1, &lampVAO);
   glBindVertexArray(lampVAO);

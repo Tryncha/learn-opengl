@@ -1,7 +1,7 @@
 #include "shader.h"
 
-void checkCompileError(GLuint shader, std::string_view message) {
-  GLint success{};
+void checkCompileError(unsigned int shader, std::string_view message) {
+  int success{};
   std::array<char, 1024> infoLog{};
 
   glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
@@ -11,8 +11,8 @@ void checkCompileError(GLuint shader, std::string_view message) {
   }
 }
 
-void checkLinkError(GLuint program, std::string_view message) {
-  GLint success{};
+void checkLinkError(unsigned int program, std::string_view message) {
+  int success{};
   std::array<char, 1024> infoLog{};
 
   glGetProgramiv(program, GL_LINK_STATUS, &success);
@@ -60,12 +60,12 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath) {
   const char* fShaderCode = fShaderRawCode.c_str();
 
   // 2. compile shaders
-  GLuint vShader{glCreateShader(GL_VERTEX_SHADER)};
+  unsigned int vShader{glCreateShader(GL_VERTEX_SHADER)};
   glShaderSource(vShader, 1, &vShaderCode, nullptr);
   glCompileShader(vShader);
   checkCompileError(vShader, "ERROR::SHADER::VERTEX::COMPILATION_FAILED");
 
-  GLuint fShader{glCreateShader(GL_FRAGMENT_SHADER)};
+  unsigned int fShader{glCreateShader(GL_FRAGMENT_SHADER)};
   glShaderSource(fShader, 1, &fShaderCode, nullptr);
   glCompileShader(fShader);
   checkCompileError(fShader, "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED");
