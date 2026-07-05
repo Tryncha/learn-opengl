@@ -216,11 +216,14 @@ int main(int, char**) {
   // diffuse map loading
   unsigned int diffuseMap{loadTexture("resources/box_diffuse.png")};
   // specular map laoding
-  unsigned int specularMap{loadTexture("resources/box_specular_colors.png")};
+  unsigned int specularMap{loadTexture("resources/box_specular.png")};
+  // emission map laoding
+  unsigned int emissionMap{loadTexture("resources/box_emission.jpg")};
 
   cubeShader.use();
   cubeShader.setInt("material.diffuse", 0);
   cubeShader.setInt("material.specular", 1);
+  cubeShader.setInt("material.emission", 2);
 
   // 2. lamp's VAO config
   unsigned int lampVAO{};
@@ -276,6 +279,10 @@ int main(int, char**) {
     // bind specular map
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, specularMap);
+
+    // bind emission map
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, emissionMap);
 
     glBindVertexArray(cubeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
