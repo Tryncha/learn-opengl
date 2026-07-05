@@ -243,14 +243,23 @@ int main(int, char**) {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // bind textures
+    // bind diffuse map
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, diffuseMap);
+
+    // bind specular map
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, specularMap);
+
     // light properties
-    glm::vec3 lightPosition{1.2f, 1.0f, 2.0f};
+    glm::vec3 lightDirection{-0.2f, -1.0f, -0.3f};
 
     // cube object
     cubeShader.use();
 
     // clang-format off
-    cubeShader.setVec3("light.position", lightPosition);
+    cubeShader.setVec3("light.direction", lightDirection);
     cubeShader.setVec3("light.ambient",  glm::vec3(0.2f, 0.2f, 0.2f));
     cubeShader.setVec3("light.diffuse",  glm::vec3(0.5f, 0.5f, 0.5f));
     cubeShader.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
@@ -266,38 +275,39 @@ int main(int, char**) {
     cubeShader.setMat4("projection", cubeProjection);
     cubeShader.setMat4("view", camera.getViewMatrix());
 
-    glm::mat4 cubeModel{glm::mat4(1.0)};
-    cubeShader.setMat4("model", cubeModel);
-
-    // bind diffuse map
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, diffuseMap);
-
-    // bind specular map
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, specularMap);
-
     glBindVertexArray(cubeVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
 
-    // lamp object (light source)
-    lampShader.use();
+    for (std::size_t i{0}; i < data::cubePositions.size(); ++i) {
+      float angle{20.0f * static_cast<float>(i)};
 
-    // model, view and projection matrices
-    glm::mat4 lampProjection{glm::perspective(
-        glm::radians(camera.getFov()), window::aspectRatio, 0.1f, 100.0f)};
+      glm::mat4 model{glm::mat4(1.0)};
+      model = glm::translate(model, data::cubePositions[i]);
+      model =
+          glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
 
-    lampShader.setMat4("projection", lampProjection);
-    lampShader.setMat4("view", camera.getViewMatrix());
+      cubeShader.setMat4("model", model);
+      glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
 
-    glm::mat4 lampModel{glm::mat4(1.0)};
-    lampModel = glm::translate(lampModel, lightPosition);
-    lampModel = glm::scale(lampModel, glm::vec3(0.2f));
+    // a lamp object is weird when we only have a directional light,
+    // don't render the light object
+    // lamp object (light source) lampShader.use();
 
-    lampShader.setMat4("model", lampModel);
+    // // model, view and projection matrices
+    // glm::mat4 lampProjection{glm::perspective(
+    //     glm::radians(camera.getFov()), window::aspectRatio, 0.1f, 100.0f)};
 
-    glBindVertexArray(lampVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    // lampShader.setMat4("projection", lampProjection);
+    // lampShader.setMat4("view", camera.getViewMatrix());
+
+    // glm::mat4 lampModel{glm::mat4(1.0)};
+    // lampModel = glm::translate(lampModel, lightPosition);
+    // lampModel = glm::scale(lampModel, glm::vec3(0.2f));
+
+    // lampShader.setMat4("model", lampModel);
+
+    // glBindVertexArray(lampVAO);
+    // glDrawArrays(GL_TRIANGLES, 0, 36);
 
     glfwSwapBuffers(window);
     glfwPollEvents();

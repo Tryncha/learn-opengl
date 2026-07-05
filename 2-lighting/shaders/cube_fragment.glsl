@@ -1,7 +1,7 @@
 #version 330 core
 
 struct Light {
-  vec3 position;
+  vec3 direction;
   vec3 ambient;
   vec3 diffuse;
   vec3 specular;
@@ -32,7 +32,7 @@ void main() {
   vec3 ambient = light.ambient * texDiffuse;
 
   // diffuse light
-  vec3 lightDirection = normalize(light.position - FragPosition);
+  vec3 lightDirection = normalize(-light.direction);
   float diffuseIntensity = max(dot(FragNormal, lightDirection), 0.0);
   vec3 diffuse = light.diffuse * (diffuseIntensity * texDiffuse);
 
