@@ -16,14 +16,8 @@ void main() {
   gl_Position = projection * view * model * vec4(aPosition, 1.0);
   FragPosition = vec3(model * vec4(aPosition, 1.0));
 
-  // we didn't do any scaling on the object, so there was not really
-  // a need to use this normal matrix, otherwise is necessary.
-  // also, it is better do this calc on the CPU and send it
-  // to the GPU using an uniform.
+  mat3 normalMat = mat3(transpose(inverse(model)));
 
-  // mat3 normalMat = mat3(transpose(inverse(model)));
-  // FragNormal = normalMat * aNormal;
-
-  // FragNormal = aNormal;
+  FragNormal = normalMat * aNormal;
   TexCoords = aTexCoords;
 }
