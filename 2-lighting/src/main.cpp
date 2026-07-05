@@ -228,8 +228,6 @@ int main(int, char**) {
     cubeShader.setVec3("light.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));
     cubeShader.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
 
-    cubeShader.setVec3("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
-    cubeShader.setVec3("material.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
     cubeShader.setVec3("material.specular", glm::vec3(0.5f, 0.5f, 0.5f));
     cubeShader.setFloat("material.shininess", 32.0f);
 
