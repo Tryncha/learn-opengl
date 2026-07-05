@@ -253,16 +253,21 @@ int main(int, char**) {
     glBindTexture(GL_TEXTURE_2D, specularMap);
 
     // light properties
-    glm::vec3 lightDirection{-0.2f, -1.0f, -0.3f};
+    glm::vec3 lightPosition{1.2f, 1.0f, 2.0f};
 
     // cube object
     cubeShader.use();
 
     // clang-format off
-    cubeShader.setVec3("light.direction", lightDirection);
+    cubeShader.setVec3("light.position", lightPosition);
+
     cubeShader.setVec3("light.ambient",  glm::vec3(0.2f, 0.2f, 0.2f));
     cubeShader.setVec3("light.diffuse",  glm::vec3(0.5f, 0.5f, 0.5f));
     cubeShader.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+
+    cubeShader.setFloat("light.constant",  1.0f);
+    cubeShader.setFloat("light.linear",    0.09f);
+    cubeShader.setFloat("light.quadratic", 0.032f);
     // clang-format on
 
     cubeShader.setFloat("material.shininess", 32.0f);
@@ -289,25 +294,23 @@ int main(int, char**) {
       glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 
-    // a lamp object is weird when we only have a directional light,
-    // don't render the light object
-    // lamp object (light source) lampShader.use();
+    lampShader.use();
 
-    // // model, view and projection matrices
-    // glm::mat4 lampProjection{glm::perspective(
-    //     glm::radians(camera.getFov()), window::aspectRatio, 0.1f, 100.0f)};
+    // model, view and projection matrices
+    glm::mat4 lampProjection{glm::perspective(
+        glm::radians(camera.getFov()), window::aspectRatio, 0.1f, 100.0f)};
 
-    // lampShader.setMat4("projection", lampProjection);
-    // lampShader.setMat4("view", camera.getViewMatrix());
+    lampShader.setMat4("projection", lampProjection);
+    lampShader.setMat4("view", camera.getViewMatrix());
 
-    // glm::mat4 lampModel{glm::mat4(1.0)};
-    // lampModel = glm::translate(lampModel, lightPosition);
-    // lampModel = glm::scale(lampModel, glm::vec3(0.2f));
+    glm::mat4 lampModel{glm::mat4(1.0)};
+    lampModel = glm::translate(lampModel, lightPosition);
+    lampModel = glm::scale(lampModel, glm::vec3(0.2f));
 
-    // lampShader.setMat4("model", lampModel);
+    lampShader.setMat4("model", lampModel);
 
-    // glBindVertexArray(lampVAO);
-    // glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(lampVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
