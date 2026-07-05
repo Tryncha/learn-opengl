@@ -2,6 +2,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 // clang-format on
+#include <stb_image/stb_image.h>
+
 #include <array>
 #include <cmath>
 #include <glm/glm.hpp>
@@ -141,14 +143,54 @@ int main(int, char**) {
   glBindVertexArray(cubeVAO);
 
   // position attribute
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
                         reinterpret_cast<void*>(0));
   glEnableVertexAttribArray(0);
 
   // normal vector attribute
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
                         reinterpret_cast<void*>(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
+
+  // texture coords attribute
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+                        reinterpret_cast<void*>(6 * sizeof(float)));
+  glEnableVertexAttribArray(2);
+
+  // diffuse map loading
+  int width{};
+  int height{};
+  int nrChannels{};
+
+  // load and create a diffuse map
+  GLuint diffuseMap{};
+
+  glGenTextures(1, &diffuseMap);
+  glBindTexture(GL_TEXTURE_2D, diffuseMap);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  stbi_set_flip_vertically_on_load(true);
+
+  const char* diffuseMapPath{
+      (std::string(CHAPTER_DIR) + "/textures/container2.png").c_str()};
+  unsigned char* diffuseMapData{
+      stbi_load(diffuseMapPath, &width, &height, &nrChannels, 0)};
+
+  if (diffuseMapData) {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, diffuseMapData);
+  } else {
+    std::cerr << "Failed to load diffuse map.\n";
+  }
+
+  stbi_image_free(diffuseMapData);
+
+  cubeShader.use();
+  cubeShader.setInt("material.diffuse", 0);
 
   // 2. lamp's VAO config
   GLuint lampVAO{};
@@ -160,7 +202,7 @@ int main(int, char**) {
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
   // position attribute
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
                         reinterpret_cast<void*>(0));
   glEnableVertexAttribArray(0);
 
@@ -177,19 +219,13 @@ int main(int, char**) {
 
     // light properties
     glm::vec3 lightPosition{1.2f, 1.0f, 2.0f};
-    glm::vec3 lightColor{std::sin(static_cast<float>(2.0f * glfwGetTime())),
-                         std::sin(static_cast<float>(0.7f * glfwGetTime())),
-                         std::sin(static_cast<float>(1.3f * glfwGetTime()))};
-
-    glm::vec3 lightDiffuse{lightColor * glm::vec3(0.5f)};
-    glm::vec3 lightAmbient{lightDiffuse * glm::vec3(0.2f)};
 
     // cube object
     cubeShader.use();
 
     cubeShader.setVec3("light.position", lightPosition);
-    cubeShader.setVec3("light.ambient", lightAmbient);
-    cubeShader.setVec3("light.diffuse", lightDiffuse);
+    cubeShader.setVec3("light.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
+    cubeShader.setVec3("light.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));
     cubeShader.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
 
     cubeShader.setVec3("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
@@ -208,6 +244,10 @@ int main(int, char**) {
 
     glm::mat4 cubeModel{glm::mat4(1.0)};
     cubeShader.setMat4("model", cubeModel);
+
+    // bind diffuse map
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, diffuseMap);
 
     glBindVertexArray(cubeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
