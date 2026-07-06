@@ -1,5 +1,11 @@
 #version 330 core
 
+in vec2 TexCoords;
+in vec3 FragPosition;
+in vec3 FragNormal;
+
+out vec4 FragColor;
+
 struct Light {
   vec3 position;
   vec3 direction;
@@ -25,49 +31,59 @@ struct Material {
   float shininess;
 };
 
-uniform Light light;
-uniform Material material;
+uniform Light u_Light;
+uniform Material u_Material;
+uniform vec3 u_ViewPosition;
 
-uniform vec3 viewPosition;
+vec3 calcAmbient(vec3 texDiffuse) {
+  return u_Light.ambient * texDiffuse;
+}
 
-in vec2 TexCoords;
-in vec3 FragPosition;
-in vec3 FragNormal;
-
-out vec4 FragColor;
-
-void main() {
-  vec3 texDiffuse = vec3(texture(material.diffuse, TexCoords));
-  vec3 texSpecular = vec3(texture(material.specular, TexCoords));
-
-  vec3 lightDirection = normalize(light.position - FragPosition);
-
-  // spotlight calcualtions
-  float theta = dot(lightDirection, normalize(-light.direction));
-  float epsilon = light.innerCutOff - light.outerCutOff;
-  float spotlightIntensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0); 
-
-  // ambient light
-  vec3 ambient = light.ambient * texDiffuse;
-
-  // diffuse light
+vec3 calcDiffuse(vec3 texDiffuse, vec3 lightDirection) {
   float diffuseIntensity = max(dot(FragNormal, lightDirection), 0.0);
-  vec3 diffuse = light.diffuse * (diffuseIntensity * texDiffuse);
+  return u_Light.diffuse * (diffuseIntensity * texDiffuse);
+}
 
-  // specular light
-  vec3 viewDirection = normalize(viewPosition - FragPosition);
+vec3 calcSpecular(vec3 texSpecular, vec3 lightDirection) {
+  vec3 viewDirection = normalize(u_ViewPosition - FragPosition);
   vec3 reflectDirection = reflect(-lightDirection, FragNormal);
 
-  float specularIntensity = pow(max(dot(viewDirection, reflectDirection), 0.0), material.shininess);
-  vec3 specular = light.specular * (specularIntensity * texSpecular);
+  float specularIntensity = pow(max(dot(viewDirection, reflectDirection), 0.0), u_Material.shininess);
+
+  return u_Light.specular * (specularIntensity * texSpecular);
+}
+
+float calcSpotlightIntensity(vec3 lightDirection) {
+  float theta = dot(lightDirection, normalize(-u_Light.direction));
+  float epsilon = u_Light.innerCutOff - u_Light.outerCutOff;
+
+  return clamp((theta - u_Light.outerCutOff) / epsilon, 0.0, 1.0);
+}
+
+float calcAttenuation() {
+  float distance = length(u_Light.position - FragPosition);
+  return 1.0 / (u_Light.constant + u_Light.linear * distance + u_Light.quadratic * (distance * distance));
+}
+
+void main() {
+  vec3 texDiffuse = vec3(texture(u_Material.diffuse, TexCoords));
+  vec3 texSpecular = vec3(texture(u_Material.specular, TexCoords));
+  vec3 lightDirection = normalize(u_Light.position - FragPosition);
+
+  // calculate lights
+  vec3 ambient = calcAmbient(texDiffuse);
+  vec3 diffuse = calcDiffuse(texDiffuse, lightDirection);
+  vec3 specular = calcSpecular(texSpecular, lightDirection);
+
+  // spotlight calculations
+  float spotlightIntensity = calcSpotlightIntensity(lightDirection);
 
   // we'll leave ambient unaffected so we always have a little light
   diffuse *= spotlightIntensity;
   specular *= spotlightIntensity;
 
   // light attenuation 
-  float distance = length(light.position - FragPosition);
-  float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
+  float attenuation = calcAttenuation();
 
   ambient *= attenuation;
   diffuse *= attenuation;

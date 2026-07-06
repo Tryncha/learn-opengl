@@ -220,8 +220,8 @@ int main(int, char**) {
   unsigned int specularMap{loadTexture("resources/box_specular.png")};
 
   cubeShader.use();
-  cubeShader.setInt("material.diffuse", 0);
-  cubeShader.setInt("material.specular", 1);
+  cubeShader.setInt("u_Material.diffuse", 0);
+  cubeShader.setInt("u_Material.specular", 1);
 
   // 2. lamp's VAO config
   unsigned int lampVAO{};
@@ -260,33 +260,33 @@ int main(int, char**) {
     cubeShader.use();
 
     // clang-format off
-    cubeShader.setVec3("light.position",  camera.getPosition());
-    cubeShader.setVec3("light.direction", camera.getFront());
+    cubeShader.setVec3("u_Light.position",  camera.getPosition());
+    cubeShader.setVec3("u_Light.direction", camera.getFront());
 
     // lights
-    cubeShader.setVec3("light.ambient",  glm::vec3(0.2f, 0.2f, 0.2f));
-    cubeShader.setVec3("light.diffuse",  glm::vec3(0.5f, 0.5f, 0.5f));
-    cubeShader.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+    cubeShader.setVec3("u_Light.ambient",  glm::vec3(0.2f, 0.2f, 0.2f));
+    cubeShader.setVec3("u_Light.diffuse",  glm::vec3(0.5f, 0.5f, 0.5f));
+    cubeShader.setVec3("u_Light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
 
     // attenuation values
-    cubeShader.setFloat("light.constant",  1.0f);
-    cubeShader.setFloat("light.linear",    0.09f);
-    cubeShader.setFloat("light.quadratic", 0.032f);
+    cubeShader.setFloat("u_Light.constant",  1.0f);
+    cubeShader.setFloat("u_Light.linear",    0.09f);
+    cubeShader.setFloat("u_Light.quadratic", 0.032f);
 
     // spotlight cutoff
-    cubeShader.setFloat("light.innerCutOff", std::cos(glm::radians(12.5f)));
-    cubeShader.setFloat("light.outerCutOff", std::cos(glm::radians(17.5f)));
+    cubeShader.setFloat("u_Light.innerCutOff", std::cos(glm::radians(12.5f)));
+    cubeShader.setFloat("u_Light.outerCutOff", std::cos(glm::radians(17.5f)));
     // clang-format on
 
-    cubeShader.setFloat("material.shininess", 32.0f);
-    cubeShader.setVec3("viewPosition", camera.getPosition());
+    cubeShader.setFloat("u_Material.shininess", 32.0f);
+    cubeShader.setVec3("u_ViewPosition", camera.getPosition());
 
     // model, view and projection matrices
     glm::mat4 cubeProjection{glm::perspective(
         glm::radians(camera.getFov()), window::aspectRatio, 0.1f, 100.0f)};
 
-    cubeShader.setMat4("projection", cubeProjection);
-    cubeShader.setMat4("view", camera.getViewMatrix());
+    cubeShader.setMat4("u_Projection", cubeProjection);
+    cubeShader.setMat4("u_View", camera.getViewMatrix());
 
     glBindVertexArray(cubeVAO);
 
@@ -298,7 +298,7 @@ int main(int, char**) {
       model =
           glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
 
-      cubeShader.setMat4("model", model);
+      cubeShader.setMat4("u_Model", model);
       glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 
@@ -311,14 +311,14 @@ int main(int, char**) {
     // glm::mat4 lampProjection{glm::perspective(
     //     glm::radians(camera.getFov()), window::aspectRatio, 0.1f, 100.0f)};
 
-    // lampShader.setMat4("projection", lampProjection);
-    // lampShader.setMat4("view", camera.getViewMatrix());
+    // lampShader.setMat4("u_Projection", lampProjection);
+    // lampShader.setMat4("u_View", camera.getViewMatrix());
 
     // glm::mat4 lampModel{glm::mat4(1.0)};
     // lampModel = glm::translate(lampModel, lightPosition);
     // lampModel = glm::scale(lampModel, glm::vec3(0.2f));
 
-    // lampShader.setMat4("model", lampModel);
+    // lampShader.setMat4("u_Model", lampModel);
 
     // glBindVertexArray(lampVAO);
     // glDrawArrays(GL_TRIANGLES, 0, 36);
