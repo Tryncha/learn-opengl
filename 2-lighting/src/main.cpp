@@ -219,10 +219,6 @@ int main(int, char**) {
   // specular map laoding
   unsigned int specularMap{loadTexture("resources/box_specular.png")};
 
-  cubeShader.use();
-  cubeShader.setInt("u_Material.diffuse", 0);
-  cubeShader.setInt("u_Material.specular", 1);
-
   // 2. lamp's VAO config
   unsigned int lampVAO{};
 
@@ -236,6 +232,63 @@ int main(int, char**) {
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride,
                         reinterpret_cast<void*>(0));
   glEnableVertexAttribArray(0);
+
+  // uniforms setting
+  cubeShader.use();
+
+  cubeShader.setInt("u_Material.diff", 0);
+  cubeShader.setInt("u_Material.spec", 1);
+  cubeShader.setFloat("u_Material.shininess", 32.0f);
+
+  // directional light
+  cubeShader.setVec3("u_DirLight.dir", {-0.2f, -1.0f, -0.3f});
+  cubeShader.setVec3("u_DirLight.ambt", {0.05f, 0.05f, 0.05f});
+  cubeShader.setVec3("u_DirLight.diff", {0.4f, 0.4f, 0.4f});
+  cubeShader.setVec3("u_DirLight.spec", {0.5f, 0.5f, 0.5f});
+
+  // point light 1
+  cubeShader.setVec3("u_PointLights[0].pos", data::pointLightPositions[0]);
+
+  cubeShader.setVec3("u_PointLights[0].ambt", {0.05f, 0.05f, 0.05f});
+  cubeShader.setVec3("u_PointLights[0].diff", {0.8f, 0.8f, 0.8f});
+  cubeShader.setVec3("u_PointLights[0].spec", {1.0f, 1.0f, 1.0f});
+
+  cubeShader.setFloat("u_PointLights[0].constant", 1.0f);
+  cubeShader.setFloat("u_PointLights[0].linear", 0.09f);
+  cubeShader.setFloat("u_PointLights[0].quadratic", 0.032f);
+
+  // point light 2
+  cubeShader.setVec3("u_PointLights[1].pos", data::pointLightPositions[1]);
+
+  cubeShader.setVec3("u_PointLights[1].ambt", {0.05f, 0.05f, 0.05f});
+  cubeShader.setVec3("u_PointLights[1].diff", {0.8f, 0.8f, 0.8f});
+  cubeShader.setVec3("u_PointLights[1].spec", {1.0f, 1.0f, 1.0f});
+
+  cubeShader.setFloat("u_PointLights[1].constant", 1.0f);
+  cubeShader.setFloat("u_PointLights[1].linear", 0.09f);
+  cubeShader.setFloat("u_PointLights[1].quadratic", 0.032f);
+
+  // point light 3
+  cubeShader.setVec3("u_PointLights[2].pos", data::pointLightPositions[2]);
+
+  cubeShader.setVec3("u_PointLights[2].ambt", {0.05f, 0.05f, 0.05f});
+  cubeShader.setVec3("u_PointLights[2].diff", {0.8f, 0.8f, 0.8f});
+  cubeShader.setVec3("u_PointLights[2].spec", {1.0f, 1.0f, 1.0f});
+
+  cubeShader.setFloat("u_PointLights[2].constant", 1.0f);
+  cubeShader.setFloat("u_PointLights[2].linear", 0.09f);
+  cubeShader.setFloat("u_PointLights[2].quadratic", 0.032f);
+
+  // point light 4
+  cubeShader.setVec3("u_PointLights[3].pos", data::pointLightPositions[3]);
+
+  cubeShader.setVec3("u_PointLights[3].ambt", {0.05f, 0.05f, 0.05f});
+  cubeShader.setVec3("u_PointLights[3].diff", {0.8f, 0.8f, 0.8f});
+  cubeShader.setVec3("u_PointLights[3].spec", {1.0f, 1.0f, 1.0f});
+
+  cubeShader.setFloat("u_PointLights[3].constant", 1.0f);
+  cubeShader.setFloat("u_PointLights[3].linear", 0.09f);
+  cubeShader.setFloat("u_PointLights[3].quadratic", 0.032f);
 
   while (!glfwWindowShouldClose(window)) {
     stabilizeFrame();
@@ -253,33 +306,9 @@ int main(int, char**) {
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, specularMap);
 
-    // light properties
-    // glm::vec3 lightPosition{1.2f, 1.0f, 2.0f};
-
     // cube object
     cubeShader.use();
-
-    // clang-format off
-    cubeShader.setVec3("u_Light.position",  camera.getPosition());
-    cubeShader.setVec3("u_Light.direction", camera.getFront());
-
-    // lights
-    cubeShader.setVec3("u_Light.ambient",  glm::vec3(0.2f, 0.2f, 0.2f));
-    cubeShader.setVec3("u_Light.diffuse",  glm::vec3(0.5f, 0.5f, 0.5f));
-    cubeShader.setVec3("u_Light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
-
-    // attenuation values
-    cubeShader.setFloat("u_Light.constant",  1.0f);
-    cubeShader.setFloat("u_Light.linear",    0.09f);
-    cubeShader.setFloat("u_Light.quadratic", 0.032f);
-
-    // spotlight cutoff
-    cubeShader.setFloat("u_Light.innerCutOff", std::cos(glm::radians(12.5f)));
-    cubeShader.setFloat("u_Light.outerCutOff", std::cos(glm::radians(17.5f)));
-    // clang-format on
-
-    cubeShader.setFloat("u_Material.shininess", 32.0f);
-    cubeShader.setVec3("u_ViewPosition", camera.getPosition());
+    cubeShader.setVec3("u_ViewPos", camera.getPosition());
 
     // model, view and projection matrices
     glm::mat4 cubeProjection{glm::perspective(
@@ -302,26 +331,26 @@ int main(int, char**) {
       glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 
-    // again, a lamp object is weird when we only have a spot light,
-    // don't render the light object
+    lampShader.use();
 
-    // lampShader.use();
+    // model, view and projection matrices
+    glm::mat4 lampProjection{glm::perspective(
+        glm::radians(camera.getFov()), window::aspectRatio, 0.1f, 100.0f)};
 
-    // // model, view and projection matrices
-    // glm::mat4 lampProjection{glm::perspective(
-    //     glm::radians(camera.getFov()), window::aspectRatio, 0.1f, 100.0f)};
+    lampShader.setMat4("u_Projection", lampProjection);
+    lampShader.setMat4("u_View", camera.getViewMatrix());
 
-    // lampShader.setMat4("u_Projection", lampProjection);
-    // lampShader.setMat4("u_View", camera.getViewMatrix());
+    glBindVertexArray(lampVAO);
 
-    // glm::mat4 lampModel{glm::mat4(1.0)};
-    // lampModel = glm::translate(lampModel, lightPosition);
-    // lampModel = glm::scale(lampModel, glm::vec3(0.2f));
+    for (std::size_t i{0}; i < data::pointLightPositions.size(); ++i) {
+      glm::mat4 lampModel{glm::mat4(1.0)};
+      lampModel = glm::translate(lampModel, data::pointLightPositions[i]);
+      lampModel = glm::scale(lampModel, glm::vec3(0.2f));
 
-    // lampShader.setMat4("u_Model", lampModel);
+      lampShader.setMat4("u_Model", lampModel);
 
-    // glBindVertexArray(lampVAO);
-    // glDrawArrays(GL_TRIANGLES, 0, 36);
+      glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
 
     glfwSwapBuffers(window);
     glfwPollEvents();
