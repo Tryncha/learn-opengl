@@ -1,7 +1,7 @@
 #version 330 core
 
 in vec2 TexCoords;
-in vec3 FragPos;
+in vec3 FragPosition;
 in vec3 FragNormal;
 
 out vec4 FragColor;
@@ -41,7 +41,7 @@ uniform DirLight u_DirLight;
 uniform PointLight u_PointLights[N_POINT_LIGHTS];
 
 vec3 calcDirLight(DirLight dirLight) {
-  vec3 viewDir = normalize(u_ViewPos - FragPos);
+  vec3 viewDir = normalize(u_ViewPos - FragPosition);
   vec3 lightDir = normalize(-dirLight.dir);
 
   // textures
@@ -64,8 +64,8 @@ vec3 calcDirLight(DirLight dirLight) {
 }
 
 vec3 calcPointLight(PointLight pointLight) {
-  vec3 viewDir = normalize(u_ViewPos - FragPos);
-  vec3 lightDir = normalize(pointLight.pos - FragPos);
+  vec3 viewDir = normalize(u_ViewPos - FragPosition);
+  vec3 lightDir = normalize(pointLight.pos - FragPosition);
 
   // textures
   vec3 texDiff = vec3(texture(u_Material.diff, TexCoords));
@@ -79,7 +79,7 @@ vec3 calcPointLight(PointLight pointLight) {
   float specIntensity = pow(max(dot(viewDir, reflectDir), 0.0), u_Material.shininess);
 
   // attenuation
-  float distance = length(pointLight.pos - FragPos);
+  float distance = length(pointLight.pos - FragPosition);
   float attenuation = 1.0 / (pointLight.constant + pointLight.linear * distance + pointLight.quadratic * (distance * distance));
 
   // results combined

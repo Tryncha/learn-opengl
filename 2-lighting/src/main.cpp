@@ -246,49 +246,20 @@ int main(int, char**) {
   cubeShader.setVec3("u_DirLight.diff", {0.4f, 0.4f, 0.4f});
   cubeShader.setVec3("u_DirLight.spec", {0.5f, 0.5f, 0.5f});
 
-  // point light 1
-  cubeShader.setVec3("u_PointLights[0].pos", data::pointLightPositions[0]);
+  // point lights
+  for (std::size_t i{0}; i < data::pointLightPositions.size(); ++i) {
+    std::string prefix{"u_PointLights[" + std::to_string(i) + "]."};
 
-  cubeShader.setVec3("u_PointLights[0].ambt", {0.05f, 0.05f, 0.05f});
-  cubeShader.setVec3("u_PointLights[0].diff", {0.8f, 0.8f, 0.8f});
-  cubeShader.setVec3("u_PointLights[0].spec", {1.0f, 1.0f, 1.0f});
+    cubeShader.setVec3(prefix + "pos", data::pointLightPositions[i]);
 
-  cubeShader.setFloat("u_PointLights[0].constant", 1.0f);
-  cubeShader.setFloat("u_PointLights[0].linear", 0.09f);
-  cubeShader.setFloat("u_PointLights[0].quadratic", 0.032f);
+    cubeShader.setVec3(prefix + "ambt", {0.05f, 0.05f, 0.05f});
+    cubeShader.setVec3(prefix + "diff", {0.8f, 0.8f, 0.8f});
+    cubeShader.setVec3(prefix + "spec", {1.0f, 1.0f, 1.0f});
 
-  // point light 2
-  cubeShader.setVec3("u_PointLights[1].pos", data::pointLightPositions[1]);
-
-  cubeShader.setVec3("u_PointLights[1].ambt", {0.05f, 0.05f, 0.05f});
-  cubeShader.setVec3("u_PointLights[1].diff", {0.8f, 0.8f, 0.8f});
-  cubeShader.setVec3("u_PointLights[1].spec", {1.0f, 1.0f, 1.0f});
-
-  cubeShader.setFloat("u_PointLights[1].constant", 1.0f);
-  cubeShader.setFloat("u_PointLights[1].linear", 0.09f);
-  cubeShader.setFloat("u_PointLights[1].quadratic", 0.032f);
-
-  // point light 3
-  cubeShader.setVec3("u_PointLights[2].pos", data::pointLightPositions[2]);
-
-  cubeShader.setVec3("u_PointLights[2].ambt", {0.05f, 0.05f, 0.05f});
-  cubeShader.setVec3("u_PointLights[2].diff", {0.8f, 0.8f, 0.8f});
-  cubeShader.setVec3("u_PointLights[2].spec", {1.0f, 1.0f, 1.0f});
-
-  cubeShader.setFloat("u_PointLights[2].constant", 1.0f);
-  cubeShader.setFloat("u_PointLights[2].linear", 0.09f);
-  cubeShader.setFloat("u_PointLights[2].quadratic", 0.032f);
-
-  // point light 4
-  cubeShader.setVec3("u_PointLights[3].pos", data::pointLightPositions[3]);
-
-  cubeShader.setVec3("u_PointLights[3].ambt", {0.05f, 0.05f, 0.05f});
-  cubeShader.setVec3("u_PointLights[3].diff", {0.8f, 0.8f, 0.8f});
-  cubeShader.setVec3("u_PointLights[3].spec", {1.0f, 1.0f, 1.0f});
-
-  cubeShader.setFloat("u_PointLights[3].constant", 1.0f);
-  cubeShader.setFloat("u_PointLights[3].linear", 0.09f);
-  cubeShader.setFloat("u_PointLights[3].quadratic", 0.032f);
+    cubeShader.setFloat(prefix + "constant", 1.0f);
+    cubeShader.setFloat(prefix + "linear", 0.09f);
+    cubeShader.setFloat(prefix + "quadratic", 0.032f);
+  }
 
   while (!glfwWindowShouldClose(window)) {
     stabilizeFrame();
