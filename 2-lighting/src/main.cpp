@@ -233,20 +233,20 @@ int main(int, char**) {
                         reinterpret_cast<void*>(0));
   glEnableVertexAttribArray(0);
 
-  // uniforms setting
+  // static uniforms setting
   cubeShader.use();
 
   cubeShader.setInt("u_Material.diff", 0);
   cubeShader.setInt("u_Material.spec", 1);
   cubeShader.setFloat("u_Material.shininess", 32.0f);
 
-  // directional light
+  // 1. directional light
   cubeShader.setVec3("u_DirLight.dir", {-0.2f, -1.0f, -0.3f});
   cubeShader.setVec3("u_DirLight.ambt", {0.05f, 0.05f, 0.05f});
   cubeShader.setVec3("u_DirLight.diff", {0.4f, 0.4f, 0.4f});
   cubeShader.setVec3("u_DirLight.spec", {0.5f, 0.5f, 0.5f});
 
-  // point lights
+  // 2. point lights
   for (std::size_t i{0}; i < data::pointLightPositions.size(); ++i) {
     std::string prefix{"u_PointLights[" + std::to_string(i) + "]."};
 
@@ -260,6 +260,18 @@ int main(int, char**) {
     cubeShader.setFloat(prefix + "linear", 0.09f);
     cubeShader.setFloat(prefix + "quadratic", 0.032f);
   }
+
+  // 3. spotlight light
+  cubeShader.setVec3("u_SpotLight.ambt", {0.0f, 0.0f, 0.0f});
+  cubeShader.setVec3("u_SpotLight.diff", {1.0f, 1.0f, 1.0f});
+  cubeShader.setVec3("u_SpotLight.spec", {1.0f, 1.0f, 1.0f});
+
+  cubeShader.setFloat("u_SpotLight.constant", 1.0f);
+  cubeShader.setFloat("u_SpotLight.linear", 0.09f);
+  cubeShader.setFloat("u_SpotLight.quadratic", 0.032f);
+
+  cubeShader.setFloat("u_SpotLight.innerCutOff", std::cos(glm::radians(12.5f)));
+  cubeShader.setFloat("u_SpotLight.outerCutOff", std::cos(glm::radians(17.5f)));
 
   while (!glfwWindowShouldClose(window)) {
     stabilizeFrame();
@@ -278,8 +290,13 @@ int main(int, char**) {
     glBindTexture(GL_TEXTURE_2D, specularMap);
 
     // cube object
+    // variable uniforms setting
     cubeShader.use();
     cubeShader.setVec3("u_ViewPos", camera.getPosition());
+
+    // 3. spotlight light
+    cubeShader.setVec3("u_SpotLight.pos", camera.getPosition());
+    cubeShader.setVec3("u_SpotLight.dir", camera.getFront());
 
     // model, view and projection matrices
     glm::mat4 cubeProjection{glm::perspective(
