@@ -5,13 +5,13 @@ Camera::Camera(const glm::vec3& position, const glm::vec3& up, float yaw,
                float pitch)
     : m_position(position),
       m_up(up),
-      m_front(DEFAULT_FRONT),
-      m_worldUp(DEFAULT_UP),
+      m_front(s_defaultFront),
+      m_worldUp(s_defaultUp),
       m_yaw(yaw),
       m_pitch(pitch),
-      m_baseSpeed(DEFAULT_BASE_SPEED),
-      m_sensitivity(DEFAULT_SENSITIVITY),
-      m_fov(DEFAULT_FOV) {
+      m_baseSpeed(s_defaultBaseSpeed),
+      m_sensitivity(s_defaultSensitivity),
+      m_fov(s_defaultFov) {
   updateVectors();
 }
 
@@ -20,13 +20,13 @@ Camera::Camera(float posX, float posY, float posZ, float upX, float upY,
                float upZ, float yaw, float pitch)
     : m_position(glm::vec3(posX, posY, posZ)),
       m_up(glm::vec3(upX, upY, upZ)),
-      m_front(DEFAULT_FRONT),
-      m_worldUp(DEFAULT_UP),
+      m_front(s_defaultFront),
+      m_worldUp(s_defaultUp),
       m_yaw(yaw),
       m_pitch(pitch),
-      m_baseSpeed(DEFAULT_BASE_SPEED),
-      m_sensitivity(DEFAULT_SENSITIVITY),
-      m_fov(DEFAULT_FOV) {
+      m_baseSpeed(s_defaultBaseSpeed),
+      m_sensitivity(s_defaultSensitivity),
+      m_fov(s_defaultFov) {
   updateVectors();
 }
 

@@ -12,13 +12,13 @@
 class Camera {
  public:
   // constructor with vectors
-  Camera(const glm::vec3& position = DEFAULT_POSITION,
-         const glm::vec3& up = DEFAULT_UP, float yaw = DEFAULT_YAW,
-         float pitch = DEFAULT_PITCH);
+  Camera(const glm::vec3& position = s_defaultPosition,
+         const glm::vec3& up = s_defaultUp, float yaw = s_defaultYaw,
+         float pitch = s_defaultPitch);
 
   // constructor with scalar values
   Camera(float posX, float posY, float posZ, float upX, float upY, float upZ,
-         float yaw = DEFAULT_YAW, float pitch = DEFAULT_PITCH);
+         float yaw = s_defaultYaw, float pitch = s_defaultPitch);
 
   // getters/setters
   float getFov() const;
@@ -37,18 +37,18 @@ class Camera {
  private:
   // clang-format off
   // defaults
-  static constexpr glm::vec3 DEFAULT_POSITION{glm::vec3(0.0f, 0.0f,  0.0f)};
-  static constexpr glm::vec3 DEFAULT_UP      {glm::vec3(0.0f, 1.0f,  0.0f)};
-  static constexpr glm::vec3 DEFAULT_FRONT   {glm::vec3(0.0f, 0.0f, -1.0f)};
+  static constexpr glm::vec3 s_defaultPosition{glm::vec3(0.0f, 0.0f,  0.0f)};
+  static constexpr glm::vec3 s_defaultUp      {glm::vec3(0.0f, 1.0f,  0.0f)};
+  static constexpr glm::vec3 s_defaultFront   {glm::vec3(0.0f, 0.0f, -1.0f)};
   
   // euler angles
-  static constexpr float DEFAULT_YAW  {-90.0f};
-  static constexpr float DEFAULT_PITCH{  0.0f};
+  static constexpr float s_defaultYaw  {-90.0f};
+  static constexpr float s_defaultPitch{  0.0f};
   
   // camera options
-  static constexpr float DEFAULT_BASE_SPEED { 2.5f};
-  static constexpr float DEFAULT_SENSITIVITY{ 0.1f};
-  static constexpr float DEFAULT_FOV        {45.0f};
+  static constexpr float s_defaultBaseSpeed  { 2.5f};
+  static constexpr float s_defaultSensitivity{ 0.1f};
+  static constexpr float s_defaultFov        {45.0f};
   // clang-format on
 
   // class members
