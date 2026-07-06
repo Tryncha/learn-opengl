@@ -61,15 +61,19 @@ void Camera::processKeyboardInput(GLFWwindow* window) {
 
   // WASD controls
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-    // to keep user on xz plane
-    m_position += glm::vec3(m_front.x, 0.0f, m_front.z) * cameraSpeed;
+    // normalized to keep a constant speed regardless of the viewer's angle
+    // y = 0.0 to keep user on xz plane
+    m_position +=
+        glm::normalize(glm::vec3(m_front.x, 0.0f, m_front.z)) * cameraSpeed;
 
   if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
     m_position -= m_right * cameraSpeed;
 
   if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-    // to keep user on xz plane
-    m_position -= glm::vec3(m_front.x, 0.0f, m_front.z) * cameraSpeed;
+    // normalized to keep a constant speed regardless of the viewer's angle
+    // y = 0.0 to keep user on xz plane
+    m_position -=
+        glm::normalize(glm::vec3(m_front.x, 0.0f, m_front.z)) * cameraSpeed;
 
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     m_position += m_right * cameraSpeed;
