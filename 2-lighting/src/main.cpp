@@ -241,37 +241,37 @@ int main(int, char**) {
   cubeShader.setFloat("u_Material.shininess", 32.0f);
 
   // 1. directional light
-  cubeShader.setVec3("u_DirLight.dir", {-0.2f, -1.0f, -0.3f});
-  cubeShader.setVec3("u_DirLight.ambt", {0.05f, 0.05f, 0.05f});
-  cubeShader.setVec3("u_DirLight.diff", {0.4f, 0.4f, 0.4f});
-  cubeShader.setVec3("u_DirLight.spec", {0.5f, 0.5f, 0.5f});
+  cubeShader.setVec3("u_DirLight.dir", data::dirLight.dir);
+  cubeShader.setVec3("u_DirLight.ambt", data::dirLight.ambt);
+  cubeShader.setVec3("u_DirLight.diff", data::dirLight.diff);
+  cubeShader.setVec3("u_DirLight.spec", data::dirLight.spec);
 
   // 2. point lights
-  for (std::size_t i{0}; i < data::pointLightPositions.size(); ++i) {
+  for (std::size_t i{0}; i < data::pointLights.size(); ++i) {
     std::string prefix{"u_PointLights[" + std::to_string(i) + "]."};
 
-    cubeShader.setVec3(prefix + "pos", data::pointLightPositions[i]);
+    cubeShader.setVec3(prefix + "pos", data::pointLights[i].pos);
 
-    cubeShader.setVec3(prefix + "ambt", {0.05f, 0.05f, 0.05f});
-    cubeShader.setVec3(prefix + "diff", {0.8f, 0.8f, 0.8f});
-    cubeShader.setVec3(prefix + "spec", {1.0f, 1.0f, 1.0f});
+    cubeShader.setVec3(prefix + "ambt", data::pointLights[i].ambt);
+    cubeShader.setVec3(prefix + "diff", data::pointLights[i].diff);
+    cubeShader.setVec3(prefix + "spec", data::pointLights[i].spec);
 
-    cubeShader.setFloat(prefix + "constant", 1.0f);
-    cubeShader.setFloat(prefix + "linear", 0.09f);
-    cubeShader.setFloat(prefix + "quadratic", 0.032f);
+    cubeShader.setFloat(prefix + "constant", data::pointLights[i].constant);
+    cubeShader.setFloat(prefix + "linear", data::pointLights[i].linear);
+    cubeShader.setFloat(prefix + "quadratic", data::pointLights[i].quadratic);
   }
 
   // 3. spotlight light
-  cubeShader.setVec3("u_SpotLight.ambt", {0.0f, 0.0f, 0.0f});
-  cubeShader.setVec3("u_SpotLight.diff", {1.0f, 1.0f, 1.0f});
-  cubeShader.setVec3("u_SpotLight.spec", {1.0f, 1.0f, 1.0f});
+  cubeShader.setVec3("u_SpotLight.ambt", data::spotLight.ambt);
+  cubeShader.setVec3("u_SpotLight.diff", data::spotLight.diff);
+  cubeShader.setVec3("u_SpotLight.spec", data::spotLight.spec);
 
-  cubeShader.setFloat("u_SpotLight.constant", 1.0f);
-  cubeShader.setFloat("u_SpotLight.linear", 0.09f);
-  cubeShader.setFloat("u_SpotLight.quadratic", 0.032f);
+  cubeShader.setFloat("u_SpotLight.constant", data::spotLight.constant);
+  cubeShader.setFloat("u_SpotLight.linear", data::spotLight.linear);
+  cubeShader.setFloat("u_SpotLight.quadratic", data::spotLight.quadratic);
 
-  cubeShader.setFloat("u_SpotLight.innerCutOff", std::cos(glm::radians(12.5f)));
-  cubeShader.setFloat("u_SpotLight.outerCutOff", std::cos(glm::radians(17.5f)));
+  cubeShader.setFloat("u_SpotLight.innerCutOff", data::spotLight.innerCutOff);
+  cubeShader.setFloat("u_SpotLight.outerCutOff", data::spotLight.outerCutOff);
 
   while (!glfwWindowShouldClose(window)) {
     stabilizeFrame();
@@ -330,9 +330,9 @@ int main(int, char**) {
 
     glBindVertexArray(lampVAO);
 
-    for (std::size_t i{0}; i < data::pointLightPositions.size(); ++i) {
+    for (std::size_t i{0}; i < data::pointLights.size(); ++i) {
       glm::mat4 lampModel{glm::mat4(1.0)};
-      lampModel = glm::translate(lampModel, data::pointLightPositions[i]);
+      lampModel = glm::translate(lampModel, data::pointLights[i].pos);
       lampModel = glm::scale(lampModel, glm::vec3(0.2f));
 
       lampShader.setMat4("u_Model", lampModel);
