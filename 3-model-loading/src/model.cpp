@@ -14,7 +14,7 @@
 #include "shader.h"
 
 // constructor, expects a filepath to a 3D model.
-Model::Model(const std::string& path, bool gamma = false) : m_gamma(gamma) {
+Model::Model(const std::string& path, bool gamma) : m_gamma(gamma) {
   loadModel(path);
 }
 
@@ -162,7 +162,7 @@ unsigned int loadTextureFromFile(const char* texturePath,
   int nrChannels{};
 
   unsigned char* textureData{
-      stbi_load(texturePath, &width, &height, &nrChannels, 0)};
+      stbi_load(filename.c_str(), &width, &height, &nrChannels, 0)};
 
   if (textureData) {
     unsigned int format{};
@@ -191,7 +191,7 @@ unsigned int loadTextureFromFile(const char* texturePath,
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
   } else {
-    std::cerr << "Failed to load texture.\nCheck path: " << texturePath << '\n';
+    std::cerr << "Failed to load texture.\nCheck path: " << filename << '\n';
   }
 
   stbi_image_free(textureData);
@@ -214,7 +214,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat,
     // skip loading a new texture
     bool skip{false};
     for (std::size_t j{0}; j < m_texturesLoaded.size(); ++j) {
-      if (std::strcmp(m_texturesLoaded[j].path.data(), str.C_Str()) == 0) {
+      if (!std::strcmp(m_texturesLoaded[j].path.data(), str.C_Str())) {
         textures.push_back(m_texturesLoaded[j]);
         skip = true;
         break;
@@ -229,6 +229,9 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat,
       texture.id = loadTextureFromFile(str.C_Str(), m_directory);
 
       textures.push_back(texture);
+      // store it as texture loaded for entire model, to ensure we won't
+      // unnecessary load duplicate textures.
+      m_texturesLoaded.push_back(texture);
     }
   }
 

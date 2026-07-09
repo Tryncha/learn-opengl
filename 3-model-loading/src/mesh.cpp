@@ -105,8 +105,8 @@ void Mesh::setupMesh() {
 
   // boneIds attribute
   glEnableVertexAttribArray(5);
-  glVertexAttribPointer(5, 4, GL_INT, GL_FALSE, sizeof(Vertex),
-                        reinterpret_cast<void*>(offsetof(Vertex, boneIds)));
+  glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex),
+                         reinterpret_cast<void*>(offsetof(Vertex, boneIds)));
 
   // weights attribute
   glEnableVertexAttribArray(6);
