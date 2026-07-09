@@ -1,3 +1,6 @@
+#ifndef MESH_H
+#define MESH_H
+
 #include <glm/glm.hpp>
 #include <string>
 #include <vector>
@@ -9,7 +12,7 @@ struct Vertex {
 
   glm::vec3 position{};
   glm::vec3 normal{};
-  glm::vec3 texCoords{};
+  glm::vec2 texCoords{};
   glm::vec3 tangent{};
   glm::vec3 bitangent{};
   std::array<int, s_max_bone_influence> boneIds{};
@@ -31,6 +34,8 @@ class Mesh {
   void draw(const Shader& shader);
 
  private:
+  void setupMesh();
+
   std::vector<Vertex> m_vertices;
   std::vector<Texture> m_textures;
   std::vector<unsigned int> m_indices;
@@ -38,6 +43,6 @@ class Mesh {
   unsigned int m_vao{};
   unsigned int m_vbo{};
   unsigned int m_ebo{};
-
-  void setupMesh();
 };
+
+#endif
