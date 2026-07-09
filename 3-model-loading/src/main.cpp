@@ -12,6 +12,7 @@
 #include <string>
 
 #include "camera.h"
+#include "constants.h"
 #include "model.h"
 #include "shader.h"
 

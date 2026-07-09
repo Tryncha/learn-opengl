@@ -11,6 +11,7 @@
 #include <string>
 
 #include "camera.h"
+#include "constants.h"
 #include "data.h"
 #include "shader.h"
 

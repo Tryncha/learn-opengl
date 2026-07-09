@@ -1,7 +1,10 @@
 #include "model.h"
 
+#include <assimp/material.h>
+#include <assimp/mesh.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+#include <glad/glad.h>
 #include <stb_image/stb_image.h>
 
 #include <assimp/Importer.hpp>

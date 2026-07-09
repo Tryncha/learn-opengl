@@ -2,6 +2,7 @@
 #define MODEL_H
 
 #include <assimp/material.h>
+#include <assimp/mesh.h>
 #include <assimp/scene.h>
 
 #include <string>

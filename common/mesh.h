@@ -1,6 +1,7 @@
 #ifndef MESH_H
 #define MESH_H
 
+#include <array>
 #include <glm/glm.hpp>
 #include <string>
 #include <vector>

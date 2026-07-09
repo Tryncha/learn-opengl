@@ -1,5 +1,13 @@
 #include "shader.h"
 
+#include <glad/glad.h>
+
+#include <fstream>
+#include <glm/glm.hpp>
+#include <iostream>
+#include <sstream>
+#include <string>
+
 void checkCompileError(unsigned int shader, std::string_view message) {
   int success{};
   std::array<char, 1024> infoLog{};

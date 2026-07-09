@@ -1,5 +1,14 @@
 #include "camera.h"
 
+#include <GLFW/glfw3.h>
+
+#include <cmath>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include "camera.h"
+#include "constants.h"
+
 // constructor with vectors
 Camera::Camera(const glm::vec3& position, const glm::vec3& up, float yaw,
                float pitch)

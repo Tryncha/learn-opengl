@@ -13,6 +13,8 @@ add_library(
   common/glad.c
   common/stb_image.cpp
   common/camera.cpp
+  common/mesh.cpp
+  common/model.cpp
   common/shader.cpp
 )
 
