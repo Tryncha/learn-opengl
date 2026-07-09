@@ -5,12 +5,19 @@
 #include "shader.h"
 
 struct Vertex {
+  static constexpr int s_max_bone_influence{4};
+
   glm::vec3 position{};
   glm::vec3 normal{};
   glm::vec3 texCoords{};
+  glm::vec3 tangent{};
+  glm::vec3 bitangent{};
+  std::array<int, s_max_bone_influence> boneIds{};
+  std::array<float, s_max_bone_influence> weights{};
 };
 
 struct Texture {
+  std::string path{};
   std::string type{};
   unsigned int id{};
 };
@@ -24,13 +31,13 @@ class Mesh {
   void draw(const Shader& shader);
 
  private:
-  unsigned int m_vao{};
-  unsigned int m_vbo{};
-  unsigned int m_ebo{};
-
   std::vector<Vertex> m_vertices;
   std::vector<Texture> m_textures;
   std::vector<unsigned int> m_indices;
+
+  unsigned int m_vao{};
+  unsigned int m_vbo{};
+  unsigned int m_ebo{};
 
   void setupMesh();
 };
