@@ -66,9 +66,9 @@ void Model::processNode(aiNode* node, const aiScene* scene) {
 }
 
 Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
-  std::vector<Vertex> vertices;
-  std::vector<Texture> textures;
-  std::vector<unsigned int> indices;
+  std::vector<Vertex> vertices{};
+  std::vector<unsigned int> indices{};
+  std::vector<Texture> textures{};
 
   // mesh's vertices
   for (std::size_t i{0}; i < mesh->mNumVertices; ++i) {
@@ -117,6 +117,15 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
     vertices.push_back(vertex);
   }
 
+  // mesh's indices
+  for (std::size_t i{0}; i < mesh->mNumFaces; ++i) {
+    aiFace face{mesh->mFaces[i]};
+
+    for (std::size_t j{0}; j < face.mNumIndices; ++j) {
+      indices.push_back(face.mIndices[j]);
+    }
+  }
+
   // mesh's materials
   aiMaterial* material{scene->mMaterials[mesh->mMaterialIndex]};
 
@@ -140,16 +149,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
       loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height")};
   textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
-  // mesh's indices
-  for (std::size_t i{0}; i < mesh->mNumFaces; ++i) {
-    aiFace face{mesh->mFaces[i]};
-
-    for (std::size_t j{0}; j < face.mNumIndices; ++j) {
-      indices.push_back(face.mIndices[j]);
-    }
-  }
-
-  return Mesh(vertices, textures, indices);
+  return Mesh(vertices, indices, textures);
 }
 
 unsigned int loadTextureFromFile(const char* texturePath,

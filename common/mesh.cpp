@@ -10,9 +10,9 @@
 #include "shader.h"
 
 Mesh::Mesh(const std::vector<Vertex>& vertices,
-           const std::vector<Texture>& textures,
-           const std::vector<unsigned int>& indices)
-    : m_vertices{vertices}, m_textures{textures}, m_indices{indices} {
+           const std::vector<unsigned int>& indices,
+           const std::vector<Texture>& textures)
+    : m_vertices{vertices}, m_indices{indices}, m_textures{textures} {
   setupMesh();
 };
 
