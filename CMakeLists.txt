@@ -29,6 +29,7 @@ target_link_libraries(
   glfw
   opengl32
   glm::glm
+  assimp::assimp
 )
 
 # Ignore warnings from glad.c
@@ -77,3 +78,4 @@ endfunction()
 add_subdirectory(1-getting-started)
 add_subdirectory(2-lighting)
 add_subdirectory(3-model-loading)
+add_subdirectory(4-advanced-opengl)

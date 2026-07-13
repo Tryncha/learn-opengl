@@ -5,9 +5,3 @@ file(GLOB CHAPTER_SOURCES CONFIGURE_DEPENDS
 )
 
 add_chapter_target(${CHAPTER_NAME} "${CHAPTER_SOURCES}")
-
-target_link_libraries(
-  ${CHAPTER_NAME} PRIVATE
-  lgl-common
-  assimp::assimp
-)
