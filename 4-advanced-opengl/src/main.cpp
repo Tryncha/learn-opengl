@@ -175,7 +175,7 @@ int main(int, char**) {
   // configure global opengl state
   glEnable(GL_DEPTH_TEST);
   // always pass the depth test (same effect as glDisable(GL_DEPTH_TEST))
-  glDepthFunc(GL_LESS);
+  // glDepthFunc(GL_LESS);
 
   // build and compile shaders
   Shader ourShader{
@@ -283,6 +283,7 @@ int main(int, char**) {
     glBindTexture(GL_TEXTURE_2D, planeTexture);
 
     glm::mat4 planeModel{glm::mat4(1.0)};
+    planeModel = glm::translate(modelCube2, glm::vec3(0.0f, -0.01f, 0.0f));
     ourShader.setMat4("u_Model", planeModel);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
