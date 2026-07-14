@@ -241,34 +241,7 @@ int main(int, char**) {
 
   glBindVertexArray(0);
 
-  // 3. Transparent's VAO (and VBO) config
-  unsigned int transparentVBO{};
-  unsigned int transparentVAO{};
-
-  glGenVertexArrays(1, &transparentVAO);
-  glGenBuffers(1, &transparentVBO);
-  glBindVertexArray(transparentVAO);
-
-  glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
-  glBufferData(GL_ARRAY_BUFFER,
-               data::transparentVertices.size() * sizeof(float),
-               data::transparentVertices.data(), GL_STATIC_DRAW);
-
-  constexpr std::size_t transparentStride{5 * sizeof(float)};
-
-  // position attribute
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, transparentStride,
-                        reinterpret_cast<void*>(0));
-  glEnableVertexAttribArray(0);
-
-  // texture coords attribute
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, transparentStride,
-                        reinterpret_cast<void*>(3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-
-  glBindVertexArray(0);
-
-  // 4. Quad's VAO (and VBO) config
+  // 3. Quad's VAO (and VBO) config
   unsigned int quadVBO{};
   unsigned int quadVAO{};
 
@@ -283,7 +256,7 @@ int main(int, char**) {
   constexpr std::size_t quadStride{4 * sizeof(float)};
 
   // position attribute
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, quadStride,
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, quadStride,
                         reinterpret_cast<void*>(0));
   glEnableVertexAttribArray(0);
 
@@ -295,7 +268,7 @@ int main(int, char**) {
   glBindVertexArray(0);
 
   // textures
-  unsigned int cubeTexture{loadTexture("resources/container.jpg")};
+  unsigned int cubeTexture{loadTexture("resources/textures/container.jpg")};
   unsigned int planeTexture{loadTexture("resources/textures/metal.png")};
 
   baseShader.use();
@@ -312,7 +285,7 @@ int main(int, char**) {
 
   // Create a color attachment texture
   unsigned int textureColorbuffer{};
-  glGenBuffers(1, &textureColorbuffer);
+  glGenTextures(1, &textureColorbuffer);
 
   glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window::width, window::height, 0,
@@ -400,6 +373,8 @@ int main(int, char**) {
     // Now bind back to default framebuffer and draw a quad plane with the
     // attached framebuffer color texture
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // Disable depth test so screen-space quad isn't discarded
+    // due to depth test.
     glDisable(GL_DEPTH_TEST);
 
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
