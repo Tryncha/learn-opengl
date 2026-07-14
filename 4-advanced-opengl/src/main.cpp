@@ -23,8 +23,8 @@
 namespace window {
 // fullscreen may cause bugs, disabled by default
 constexpr bool openFullscreen{false};
-constexpr int width {1920};
-constexpr int height{1080};
+constexpr int width {1280};
+constexpr int height{720};
 constexpr float aspectRatio{static_cast<float>(width) /
                             static_cast<float>(height)};
 }  // namespace window
@@ -144,7 +144,7 @@ int main(int, char**) {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+  // glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
   GLFWwindow* window{glfwCreateWindow(
       window::width, window::height, "LearnOpenGL",
