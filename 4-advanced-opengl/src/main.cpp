@@ -180,16 +180,13 @@ int main(int, char**) {
   // Configure global opengl state
   glEnable(GL_DEPTH_TEST);
 
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-  glEnable(GL_CULL_FACE);
-  glCullFace(GL_FRONT);
-
   // build and compile shaders
-  Shader ourShader{
-      (std::string(CHAPTER_DIR) + "/shaders/vertex.glsl").c_str(),
-      (std::string(CHAPTER_DIR) + "/shaders/fragment.glsl").c_str()};
+  Shader baseShader{
+      (std::string(CHAPTER_DIR) + "/shaders/base_vertex.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/base_fragment.glsl").c_str()};
+  Shader screenShader{
+      (std::string(CHAPTER_DIR) + "/shaders/screen_vertex.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/screen_fragment.glsl").c_str()};
 
   // reminder: sizeof(float) == 4 bytes
   // 1. cube's VAO (and VBO) config
@@ -271,25 +268,89 @@ int main(int, char**) {
 
   glBindVertexArray(0);
 
-  // textures
-  unsigned int cubeTexture{loadTexture("resources/textures/marble.jpg")};
-  unsigned int planeTexture{loadTexture("resources/textures/metal.png")};
-  unsigned int transparentTexture{loadTexture("resources/textures/window.png")};
+  // 4. Quad's VAO (and VBO) config
+  unsigned int quadVBO{};
+  unsigned int quadVAO{};
 
-  ourShader.setInt("u_Texture1", 0);
+  glGenVertexArrays(1, &quadVAO);
+  glGenBuffers(1, &quadVBO);
+  glBindVertexArray(quadVAO);
+
+  glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+  glBufferData(GL_ARRAY_BUFFER, data::quadVertices.size() * sizeof(float),
+               data::quadVertices.data(), GL_STATIC_DRAW);
+
+  constexpr std::size_t quadStride{4 * sizeof(float)};
+
+  // position attribute
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, quadStride,
+                        reinterpret_cast<void*>(0));
+  glEnableVertexAttribArray(0);
+
+  // texture coords attribute
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, quadStride,
+                        reinterpret_cast<void*>(2 * sizeof(float)));
+  glEnableVertexAttribArray(1);
+
+  glBindVertexArray(0);
+
+  // textures
+  unsigned int cubeTexture{loadTexture("resources/container.jpg")};
+  unsigned int planeTexture{loadTexture("resources/textures/metal.png")};
+
+  baseShader.use();
+  baseShader.setInt("u_Texture1", 0);
+
+  screenShader.use();
+  screenShader.setInt("u_ScreenTexture1", 0);
+
+  // Framebuffer configuration
+  unsigned int FBO{};
+
+  glGenFramebuffers(1, &FBO);
+  glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
+  // Create a color attachment texture
+  unsigned int textureColorbuffer{};
+  glGenBuffers(1, &textureColorbuffer);
+
+  glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window::width, window::height, 0,
+               GL_RGB, GL_UNSIGNED_BYTE, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                         textureColorbuffer, 0);
+
+  // Create a renderbuffer object for depth and stencil attachment
+  // (we won't be sampling these)
+  unsigned int RBO{};
+  glGenRenderbuffers(1, &RBO);
+
+  glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, window::width,
+                        window::height);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+                            GL_RENDERBUFFER, RBO);
+
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+    std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!\n";
+  }
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  // draw as wireframe
+  // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
   while (!glfwWindowShouldClose(window)) {
     stabilizeFrame();
     processInput(window);
 
-    // Sort the windows before rendering
-    std::map<float, glm::vec3> sorted{};
-    for (std::size_t i{0}; i < data::windowPositions.size(); ++i) {
-      float distance =
-          glm::length(camera.getPosition() - data::windowPositions[i]);
-      sorted[distance] = data::windowPositions[i];
-    }
+    // Bind to framebuffer and draw scene as we normally would to color texture
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+    glEnable(GL_DEPTH_TEST);
 
+    // Make sure we clear the framebuffer's content
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -298,10 +359,10 @@ int main(int, char**) {
                                           window::aspectRatio, 0.1f, 100.0f)};
 
     // Setting uniforms
-    ourShader.use();
+    baseShader.use();
 
-    ourShader.setMat4("u_Projection", projection);
-    ourShader.setMat4("u_View", camera.getViewMatrix());
+    baseShader.setMat4("u_Projection", projection);
+    baseShader.setMat4("u_View", camera.getViewMatrix());
 
     // Model matrix
     // 1. Plane
@@ -311,7 +372,7 @@ int main(int, char**) {
     glm::mat4 planeModel{glm::mat4(1.0)};
     // Move slightly down to prevent z-fighting
     planeModel = glm::translate(planeModel, glm::vec3(0.0f, -0.01f, 0.0f));
-    ourShader.setMat4("u_Model", planeModel);
+    baseShader.setMat4("u_Model", planeModel);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
@@ -323,27 +384,33 @@ int main(int, char**) {
     // First cube
     glm::mat4 modelCube1{glm::mat4(1.0)};
     modelCube1 = glm::translate(modelCube1, glm::vec3(-1.0f, 0.0f, -1.0f));
-    ourShader.setMat4("u_Model", modelCube1);
+    baseShader.setMat4("u_Model", modelCube1);
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
     // Second cube
     glm::mat4 modelCube2{glm::mat4(1.0)};
     modelCube2 = glm::translate(modelCube2, glm::vec3(2.0f, 0.0f, 0.0f));
-    ourShader.setMat4("u_Model", modelCube2);
+    baseShader.setMat4("u_Model", modelCube2);
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
-    // 3. Windows (from furthest to nearest)
-    glBindVertexArray(transparentVAO);
-    glBindTexture(GL_TEXTURE_2D, transparentTexture);
+    glBindVertexArray(0);
 
-    for (const auto& [distance, position] : std::views::reverse(sorted)) {
-      glm::mat4 windowModel{glm::mat4(1.0)};
-      windowModel = glm::translate(windowModel, position);
-      ourShader.setMat4("u_Model", windowModel);
-      glDrawArrays(GL_TRIANGLES, 0, 6);
-    }
+    // Now bind back to default framebuffer and draw a quad plane with the
+    // attached framebuffer color texture
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDisable(GL_DEPTH_TEST);
+
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    screenShader.use();
+    glBindVertexArray(quadVAO);
+    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glBindVertexArray(0);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -351,10 +418,14 @@ int main(int, char**) {
 
   glDeleteVertexArrays(1, &cubeVAO);
   glDeleteVertexArrays(1, &planeVAO);
-  glDeleteVertexArrays(1, &transparentVAO);
+  glDeleteVertexArrays(1, &quadVAO);
+
   glDeleteBuffers(1, &cubeVBO);
   glDeleteBuffers(1, &planeVBO);
-  glDeleteBuffers(1, &transparentVBO);
+  glDeleteBuffers(1, &quadVBO);
+
+  glDeleteRenderbuffers(1, &RBO);
+  glDeleteFramebuffers(1, &FBO);
 
   glfwTerminate();
   return 0;

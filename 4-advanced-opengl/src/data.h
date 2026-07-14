@@ -95,12 +95,16 @@ constexpr std::array<float, 5 * 3 * 2> transparentVertices{
     1.0f,  0.5f,  0.0f,  1.0f,  0.0f
 };
 
-constexpr std::array<glm::vec3, 5> windowPositions{
-  glm::vec3(-1.5f, 0.0f, -0.48f),
-  glm::vec3( 1.5f, 0.0f,  0.51f),
-  glm::vec3( 0.0f, 0.0f,  0.7f),
-  glm::vec3(-0.3f, 0.0f, -2.3f),
-  glm::vec3( 0.5f, 0.0f, -0.6f)
+// Each row corresponds to a vertex:
+// 2 floats, 2 floats -> position, texture coords,
+constexpr std::array<float, 4 * 3 * 2> quadVertices{
+  -1.0f,  1.0f,  0.0f, 1.0f,
+  -1.0f, -1.0f,  0.0f, 0.0f,
+   1.0f, -1.0f,  1.0f, 0.0f,
+
+  -1.0f,  1.0f,  0.0f, 1.0f,
+   1.0f, -1.0f,  1.0f, 0.0f,
+   1.0f,  1.0f,  1.0f, 1.0f
 };
 } // namespace data
 // clang-format on
