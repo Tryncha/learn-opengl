@@ -172,15 +172,23 @@ int main(int, char**) {
     return -1;
   }
 
-  // configure global opengl state
+  // Configure global opengl state
+  // Enable depth testing
   glEnable(GL_DEPTH_TEST);
-  // always pass the depth test (same effect as glDisable(GL_DEPTH_TEST))
-  // glDepthFunc(GL_LESS);
+  glDepthFunc(GL_LESS);
+
+  // Enable stencil testing
+  glEnable(GL_STENCIL_TEST);
+  glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+  glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
   // build and compile shaders
-  Shader ourShader{
+  Shader baseShader{
       (std::string(CHAPTER_DIR) + "/shaders/vertex.glsl").c_str(),
-      (std::string(CHAPTER_DIR) + "/shaders/fragment.glsl").c_str()};
+      (std::string(CHAPTER_DIR) + "/shaders/base_fragment.glsl").c_str()};
+  Shader colorShader{
+      (std::string(CHAPTER_DIR) + "/shaders/vertex.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/color_fragment.glsl").c_str()};
 
   // reminder: sizeof(float) == 4 bytes
   // 1. cube's VAO (and VBO) config
@@ -239,54 +247,111 @@ int main(int, char**) {
   unsigned int cubeTexture{loadTexture("resources/textures/marble.jpg")};
   unsigned int planeTexture{loadTexture("resources/textures/metal.png")};
 
-  ourShader.setInt("u_Texture1", 0);
+  baseShader.setInt("u_Texture1", 0);
 
   while (!glfwWindowShouldClose(window)) {
     stabilizeFrame();
     processInput(window);
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    // don't forget to enable shader before setting uniforms
-    ourShader.use();
-
-    // model, view and projection matrices
+    // Setting view and projection matrices
     glm::mat4 projection{glm::perspective(glm::radians(camera.getFov()),
                                           window::aspectRatio, 0.1f, 100.0f)};
 
-    ourShader.setMat4("u_Projection", projection);
-    ourShader.setMat4("u_View", camera.getViewMatrix());
+    // Set uniforms:
+    // for baseShader
+    baseShader.use();
 
-    glActiveTexture(GL_TEXTURE0);
+    baseShader.setMat4("u_Projection", projection);
+    baseShader.setMat4("u_View", camera.getViewMatrix());
 
-    // 1. cubes
-    glBindVertexArray(cubeVAO);
-    glBindTexture(GL_TEXTURE_2D, cubeTexture);
+    // for colorShader
+    colorShader.use();
 
-    // first cube
-    glm::mat4 modelCube1{glm::mat4(1.0)};
-    modelCube1 = glm::translate(modelCube1, glm::vec3(-1.0f, 0.0f, -1.0f));
-    ourShader.setMat4("u_Model", modelCube1);
+    colorShader.setMat4("u_Projection", projection);
+    colorShader.setMat4("u_View", camera.getViewMatrix());
 
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    // Model matrix
+    // 1. Draw plane
+    glStencilMask(0x00);
 
-    // second cube
-    glm::mat4 modelCube2{glm::mat4(1.0)};
-    modelCube2 = glm::translate(modelCube2, glm::vec3(2.0f, 0.0f, 0.0f));
-    ourShader.setMat4("u_Model", modelCube2);
-
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-
-    // 2. plane
+    baseShader.use();
     glBindVertexArray(planeVAO);
     glBindTexture(GL_TEXTURE_2D, planeTexture);
 
     glm::mat4 planeModel{glm::mat4(1.0)};
-    planeModel = glm::translate(modelCube2, glm::vec3(0.0f, -0.01f, 0.0f));
-    ourShader.setMat4("u_Model", planeModel);
+    // Move slightly down to prevent z-fighting
+    planeModel = glm::translate(planeModel, glm::vec3(0.0f, -0.01f, 0.0f));
+    baseShader.setMat4("u_Model", planeModel);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+
+    // 2. First render pass:
+    // Draw objects as normal, writing to the stencil buffer
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glStencilMask(0xFF);
+
+    glActiveTexture(GL_TEXTURE0);
+
+    glBindVertexArray(cubeVAO);
+    glBindTexture(GL_TEXTURE_2D, cubeTexture);
+
+    // First cube
+    glm::mat4 baseModelCube1{glm::mat4(1.0)};
+    baseModelCube1 =
+        glm::translate(baseModelCube1, glm::vec3(-1.0f, 0.0f, -1.0f));
+    baseShader.setMat4("u_Model", baseModelCube1);
+
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    // Second cube
+    glm::mat4 baseModelCube2{glm::mat4(1.0)};
+    baseModelCube2 =
+        glm::translate(baseModelCube2, glm::vec3(2.0f, 0.0f, 0.0f));
+    baseShader.setMat4("u_Model", baseModelCube2);
+
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    // 3. Second render pass:
+    // Now draw slightly scaled versions of the objects, this time disabling
+    // stencil writing.
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    glStencilMask(0x00);
+    glDisable(GL_DEPTH_TEST);
+
+    colorShader.use();
+    glActiveTexture(GL_TEXTURE0);
+
+    glBindVertexArray(cubeVAO);
+    glBindTexture(GL_TEXTURE_2D, cubeTexture);
+
+    constexpr float scaleFactor{1.1f};
+
+    // First cube
+    glm::mat4 colorModelCube1{glm::mat4(1.0)};
+    colorModelCube1 =
+        glm::translate(colorModelCube1, glm::vec3(-1.0f, 0.0f, -1.0f));
+    colorModelCube1 = glm::scale(colorModelCube1, glm::vec3(scaleFactor));
+    colorShader.setMat4("u_Model", colorModelCube1);
+
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    // Second cube
+    glm::mat4 colorModelCube2{glm::mat4(1.0)};
+    colorModelCube2 =
+        glm::translate(colorModelCube2, glm::vec3(2.0f, 0.0f, 0.0f));
+    colorModelCube2 = glm::scale(colorModelCube2, glm::vec3(scaleFactor));
+    colorShader.setMat4("u_Model", colorModelCube2);
+
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+
+    glStencilMask(0xFF);
+    glStencilFunc(GL_ALWAYS, 0, 0xFF);
+    glEnable(GL_DEPTH_TEST);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
