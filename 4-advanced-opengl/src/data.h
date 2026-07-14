@@ -81,7 +81,7 @@ constexpr std::array<float, 5 * 3 * 2> transparentVertices{
     1.0f,  0.5f,  0.0f,  1.0f,  0.0f
 };
 
-constexpr std::array<glm::vec3, 5> grassPositions{
+constexpr std::array<glm::vec3, 5> windowPositions{
   glm::vec3(-1.5f, 0.0f, -0.48f),
   glm::vec3( 1.5f, 0.0f,  0.51f),
   glm::vec3( 0.0f, 0.0f,  0.7f),
