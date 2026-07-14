@@ -11,6 +11,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <map>
+#include <ranges>
 #include <string>
 
 #include "camera.h"
@@ -280,8 +281,9 @@ int main(int, char**) {
     // Sort the windows before rendering
     std::map<float, glm::vec3> sorted{};
     for (std::size_t i{0}; i < data::windowPositions.size(); ++i) {
-      float dist = glm::length(camera.getPosition() - data::windowPositions[i]);
-      sorted[dist] = data::windowPositions[i];
+      float distance =
+          glm::length(camera.getPosition() - data::windowPositions[i]);
+      sorted[distance] = data::windowPositions[i];
     }
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -332,10 +334,9 @@ int main(int, char**) {
     glBindVertexArray(transparentVAO);
     glBindTexture(GL_TEXTURE_2D, transparentTexture);
 
-    for (std::map<float, glm::vec3>::reverse_iterator it{sorted.rbegin()};
-         it != sorted.rend(); ++it) {
+    for (const auto& [distance, position] : std::views::reverse(sorted)) {
       glm::mat4 windowModel{glm::mat4(1.0)};
-      windowModel = glm::translate(windowModel, it->second);
+      windowModel = glm::translate(windowModel, position);
       ourShader.setMat4("u_Model", windowModel);
       glDrawArrays(GL_TRIANGLES, 0, 6);
     }
