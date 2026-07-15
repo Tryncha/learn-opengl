@@ -6,20 +6,36 @@ out vec4 FragColor;
 
 uniform sampler2D u_ScreenTexture1;
 
+const float OFFSET = 1.0 / 300.0;
+
+const vec2 OFFSETS[9] = vec2[](
+  vec2(-OFFSET, OFFSET),
+  vec2(0.0,     OFFSET),
+  vec2(OFFSET,  OFFSET),
+  vec2(-OFFSET, 0.0),
+  vec2(0.0,     0.0),
+  vec2(OFFSET,  0.0),
+  vec2(-OFFSET, -OFFSET),
+  vec2(0.0,     -OFFSET),
+  vec2(OFFSET,  -OFFSET)
+);
+
+const float KERNEL[9] = float[](
+  -1, -1, -1,
+  -1,  9, -1,
+  -1, -1, -1
+);
+
 void main() {
-  // Normal
-  FragColor = vec4(vec3(texture(u_ScreenTexture1, TexCoords)), 1.0);
+  vec3 sampleTex[9];
+  for (int i = 0; i < 9; i++) {
+    sampleTex[i] = vec3(texture(u_ScreenTexture1, TexCoords.st + OFFSETS[i]));
+  }
 
-  // Inverse
-  // FragColor = vec4(vec3(1.0 - texture(u_ScreenTexture1, TexCoords)), 1.0);
+  vec3 color = vec3(0.0);
+  for (int i = 0; i < 9; i++) {
+    color += sampleTex[i] * KERNEL[i];
+  }
 
-  // Grayscale
-  // FragColor = texture(u_ScreenTexture1, TexCoords);
-  // float average = (FragColor.r + FragColor.g + FragColor.b) / 3.0;
-  // FragColor = vec4(vec3(average), 1.0);
-
-  // "Realistic" grayscale
-  // FragColor = texture(u_ScreenTexture1, TexCoords);
-  // float average = 0.2126 * FragColor.r + 0.7152 * FragColor.g + 0.0722 * FragColor.b;
-  // FragColor = vec4(vec3(average), 1.0);
+  FragColor = vec4(color, 1.0);
 }
