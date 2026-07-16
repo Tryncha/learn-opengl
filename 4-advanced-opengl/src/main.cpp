@@ -10,8 +10,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
-#include <map>
-#include <ranges>
 #include <string>
 
 #include "camera.h"
@@ -135,6 +133,40 @@ unsigned int loadTexture(const char* texturePath, bool flipVertically = false) {
   return textureId;
 }
 
+unsigned int loadCubemap(const std::array<std::string, 6>& facesPaths) {
+  int width{};
+  int height{};
+  int nrChannels{};
+
+  unsigned int textureId{};
+  glGenTextures(1, &textureId);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, textureId);
+
+  for (std::size_t i{0}; i < facesPaths.size(); ++i) {
+    unsigned char* textureData{
+        stbi_load(facesPaths[i].c_str(), &width, &height, &nrChannels, 0)};
+
+    if (textureData) {
+      glTexImage2D(
+          GL_TEXTURE_CUBE_MAP_POSITIVE_X + static_cast<unsigned int>(i), 0,
+          GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData);
+    } else {
+      std::cout << "Cubemap texture failed to load at path: " << facesPaths[i]
+                << '\n';
+    }
+
+    stbi_image_free(textureData);
+  }
+
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+  return textureId;
+}
+
 int main(int, char**) {
   if (!glfwInit()) {
     std::cerr << "Failed to initialize GLFW.\n";
@@ -181,12 +213,12 @@ int main(int, char**) {
   glEnable(GL_DEPTH_TEST);
 
   // build and compile shaders
-  Shader baseShader{
-      (std::string(CHAPTER_DIR) + "/shaders/base_vertex.glsl").c_str(),
-      (std::string(CHAPTER_DIR) + "/shaders/base_fragment.glsl").c_str()};
-  Shader screenShader{
-      (std::string(CHAPTER_DIR) + "/shaders/screen_vertex.glsl").c_str(),
-      (std::string(CHAPTER_DIR) + "/shaders/screen_fragment.glsl").c_str()};
+  Shader cubeShader{
+      (std::string(CHAPTER_DIR) + "/shaders/cube_vertex.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/cube_fragment.glsl").c_str()};
+  Shader skyboxShader{
+      (std::string(CHAPTER_DIR) + "/shaders/skybox_vertex.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/skybox_fragment.glsl").c_str()};
 
   // reminder: sizeof(float) == 4 bytes
   // 1. cube's VAO (and VBO) config
@@ -215,113 +247,50 @@ int main(int, char**) {
 
   glBindVertexArray(0);
 
-  // 2. plane's VAO (and VBO) config
-  unsigned int planeVBO{};
-  unsigned int planeVAO{};
+  // 2. skybox's VAO (and VBO) config
+  unsigned int skyboxVBO{};
+  unsigned int skyboxVAO{};
 
-  glGenVertexArrays(1, &planeVAO);
-  glGenBuffers(1, &planeVBO);
-  glBindVertexArray(planeVAO);
+  glGenVertexArrays(1, &skyboxVAO);
+  glGenBuffers(1, &skyboxVBO);
+  glBindVertexArray(skyboxVAO);
 
-  glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
-  glBufferData(GL_ARRAY_BUFFER, data::planeVertices.size() * sizeof(float),
-               data::planeVertices.data(), GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+  glBufferData(GL_ARRAY_BUFFER, data::skyboxVertices.size() * sizeof(float),
+               data::skyboxVertices.data(), GL_STATIC_DRAW);
 
-  constexpr std::size_t planeStride{5 * sizeof(float)};
+  constexpr std::size_t skyboxStride{3 * sizeof(float)};
 
   // position attribute
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, planeStride,
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, skyboxStride,
                         reinterpret_cast<void*>(0));
   glEnableVertexAttribArray(0);
 
-  // texture coords attribute
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, planeStride,
-                        reinterpret_cast<void*>(3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-
   glBindVertexArray(0);
 
-  // 3. Quad's VAO (and VBO) config
-  unsigned int quadVBO{};
-  unsigned int quadVAO{};
-
-  glGenVertexArrays(1, &quadVAO);
-  glGenBuffers(1, &quadVBO);
-  glBindVertexArray(quadVAO);
-
-  glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-  glBufferData(GL_ARRAY_BUFFER, data::quadVertices.size() * sizeof(float),
-               data::quadVertices.data(), GL_STATIC_DRAW);
-
-  constexpr std::size_t quadStride{4 * sizeof(float)};
-
-  // position attribute
-  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, quadStride,
-                        reinterpret_cast<void*>(0));
-  glEnableVertexAttribArray(0);
-
-  // texture coords attribute
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, quadStride,
-                        reinterpret_cast<void*>(2 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-
-  glBindVertexArray(0);
-
-  // textures
+  // texture
   unsigned int cubeTexture{loadTexture("resources/textures/container.jpg")};
-  unsigned int planeTexture{loadTexture("resources/textures/metal.png")};
 
-  baseShader.use();
-  baseShader.setInt("u_Texture1", 0);
+  // cubemap
+  const std::array<std::string, 6> cubemapFacesPaths{
+      "resources/textures/skybox/right.jpg",
+      "resources/textures/skybox/left.jpg",
+      "resources/textures/skybox/top.jpg",
+      "resources/textures/skybox/bottom.jpg",
+      "resources/textures/skybox/front.jpg",
+      "resources/textures/skybox/back.jpg"};
 
-  screenShader.use();
-  screenShader.setInt("u_ScreenTexture1", 0);
+  unsigned int cubemapTexture{loadCubemap(cubemapFacesPaths)};
 
-  // Framebuffer configuration
-  unsigned int FBO{};
+  cubeShader.use();
+  cubeShader.setInt("u_Texture1", 0);
 
-  glGenFramebuffers(1, &FBO);
-  glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
-  // Create a color attachment texture
-  unsigned int textureColorbuffer{};
-  glGenTextures(1, &textureColorbuffer);
-
-  glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window::width, window::height, 0,
-               GL_RGB, GL_UNSIGNED_BYTE, NULL);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                         textureColorbuffer, 0);
-
-  // Create a renderbuffer object for depth and stencil attachment
-  // (we won't be sampling these)
-  unsigned int RBO{};
-  glGenRenderbuffers(1, &RBO);
-
-  glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, window::width,
-                        window::height);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
-                            GL_RENDERBUFFER, RBO);
-
-  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-    std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!\n";
-  }
-
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-  // draw as wireframe
-  // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  skyboxShader.use();
+  skyboxShader.setInt("u_Skybox", 0);
 
   while (!glfwWindowShouldClose(window)) {
     stabilizeFrame();
     processInput(window);
-
-    // Bind to framebuffer and draw scene as we normally would to color texture
-    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-    glEnable(GL_DEPTH_TEST);
 
     // Make sure we clear the framebuffer's content
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -332,75 +301,49 @@ int main(int, char**) {
                                           window::aspectRatio, 0.1f, 100.0f)};
 
     // Setting uniforms
-    baseShader.use();
+    cubeShader.use();
+    cubeShader.setMat4("u_Projection", projection);
+    cubeShader.setMat4("u_View", camera.getViewMatrix());
 
-    baseShader.setMat4("u_Projection", projection);
-    baseShader.setMat4("u_View", camera.getViewMatrix());
-
-    // Model matrix
-    // 1. Plane
-    glBindVertexArray(planeVAO);
-    glBindTexture(GL_TEXTURE_2D, planeTexture);
-
-    glm::mat4 planeModel{glm::mat4(1.0)};
-    // Move slightly down to prevent z-fighting
-    planeModel = glm::translate(planeModel, glm::vec3(0.0f, -0.01f, 0.0f));
-    baseShader.setMat4("u_Model", planeModel);
-
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindVertexArray(0);
-
-    // 2. Cubes
+    // 1. Cube
     glBindVertexArray(cubeVAO);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, cubeTexture);
 
-    // First cube
-    glm::mat4 modelCube1{glm::mat4(1.0)};
-    modelCube1 = glm::translate(modelCube1, glm::vec3(-1.0f, 0.0f, -1.0f));
-    baseShader.setMat4("u_Model", modelCube1);
+    cubeShader.setMat4("u_Model", glm::mat4(1.0));
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
 
-    // Second cube
-    glm::mat4 modelCube2{glm::mat4(1.0)};
-    modelCube2 = glm::translate(modelCube2, glm::vec3(2.0f, 0.0f, 0.0f));
-    baseShader.setMat4("u_Model", modelCube2);
+    // 2. Skybox
+    // Change depth function so depth test passes when values
+    // are equal to depth buffer's content
+    glDepthFunc(GL_LEQUAL);
+
+    skyboxShader.use();
+    skyboxShader.setMat4("u_Projection", projection);
+    skyboxShader.setMat4("u_View",
+                         glm::mat4(glm::mat3(camera.getViewMatrix())));
+    // skyboxShader.setMat4("u_View", camera.getViewMatrix());
+
+    glBindVertexArray(skyboxVAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
-
     glBindVertexArray(0);
 
-    // Now bind back to default framebuffer and draw a quad plane with the
-    // attached framebuffer color texture
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    // Disable depth test so screen-space quad isn't discarded
-    // due to depth test.
-    glDisable(GL_DEPTH_TEST);
-
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    screenShader.use();
-    glBindVertexArray(quadVAO);
-    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    glBindVertexArray(0);
+    // Set depth function back to default
+    glDepthFunc(GL_LESS);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
 
   glDeleteVertexArrays(1, &cubeVAO);
-  glDeleteVertexArrays(1, &planeVAO);
-  glDeleteVertexArrays(1, &quadVAO);
-
+  glDeleteVertexArrays(1, &skyboxVAO);
   glDeleteBuffers(1, &cubeVBO);
-  glDeleteBuffers(1, &planeVBO);
-  glDeleteBuffers(1, &quadVBO);
-
-  glDeleteRenderbuffers(1, &RBO);
-  glDeleteFramebuffers(1, &FBO);
+  glDeleteBuffers(1, &skyboxVBO);
 
   glfwTerminate();
   return 0;

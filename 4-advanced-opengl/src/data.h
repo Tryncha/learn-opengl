@@ -83,7 +83,7 @@ constexpr std::array<float, 5 * 3 * 2> planeVertices{
 };
 
 // Each row corresponds to a vertex:
-// 3 floats, 2 floats -> position, texture coords,
+// 3 floats, 2 floats -> position, texture coords
 // (swapped texture y-coordinates because texture is flipped upside down)
 constexpr std::array<float, 5 * 3 * 2> transparentVertices{
     0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
@@ -96,7 +96,7 @@ constexpr std::array<float, 5 * 3 * 2> transparentVertices{
 };
 
 // Each row corresponds to a vertex:
-// 2 floats, 2 floats -> position, texture coords,
+// 2 floats, 2 floats -> position, texture coords
 constexpr std::array<float, 4 * 3 * 2> quadVertices{
   -1.0f,  1.0f,  0.0f, 1.0f,
   -1.0f, -1.0f,  0.0f, 0.0f,
@@ -105,6 +105,52 @@ constexpr std::array<float, 4 * 3 * 2> quadVertices{
   -1.0f,  1.0f,  0.0f, 1.0f,
    1.0f, -1.0f,  1.0f, 0.0f,
    1.0f,  1.0f,  1.0f, 1.0f
+};
+
+// Each row corresponds to a vertex:
+// 3 floats-> position
+constexpr std::array<float, 3 * 6 * 6> skyboxVertices{  
+  -1.0f,  1.0f, -1.0f,
+  -1.0f, -1.0f, -1.0f,
+   1.0f, -1.0f, -1.0f,
+   1.0f, -1.0f, -1.0f,
+   1.0f,  1.0f, -1.0f,
+  -1.0f,  1.0f, -1.0f,
+
+  -1.0f, -1.0f,  1.0f,
+  -1.0f, -1.0f, -1.0f,
+  -1.0f,  1.0f, -1.0f,
+  -1.0f,  1.0f, -1.0f,
+  -1.0f,  1.0f,  1.0f,
+  -1.0f, -1.0f,  1.0f,
+
+   1.0f, -1.0f, -1.0f,
+   1.0f, -1.0f,  1.0f,
+   1.0f,  1.0f,  1.0f,
+   1.0f,  1.0f,  1.0f,
+   1.0f,  1.0f, -1.0f,
+   1.0f, -1.0f, -1.0f,
+
+  -1.0f, -1.0f,  1.0f,
+  -1.0f,  1.0f,  1.0f,
+   1.0f,  1.0f,  1.0f,
+   1.0f,  1.0f,  1.0f,
+   1.0f, -1.0f,  1.0f,
+  -1.0f, -1.0f,  1.0f,
+
+  -1.0f,  1.0f, -1.0f,
+   1.0f,  1.0f, -1.0f,
+   1.0f,  1.0f,  1.0f,
+   1.0f,  1.0f,  1.0f,
+  -1.0f,  1.0f,  1.0f,
+  -1.0f,  1.0f, -1.0f,
+
+  -1.0f, -1.0f, -1.0f,
+  -1.0f, -1.0f,  1.0f,
+   1.0f, -1.0f, -1.0f,
+   1.0f, -1.0f, -1.0f,
+  -1.0f, -1.0f,  1.0f,
+   1.0f, -1.0f,  1.0f
 };
 } // namespace data
 // clang-format on
