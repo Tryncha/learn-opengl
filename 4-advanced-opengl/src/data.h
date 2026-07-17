@@ -21,50 +21,49 @@ yourself and see that this is correct.
 */
 
 // each row corresponds to a vertex:
-// 3 floats, 2 floats -> position, texture coords
-constexpr std::array<float, 5 * 6 * 6> cubeVertices{
-  // Back face
-  -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  // bottom-left
-   0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  // top-right
-   0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  // bottom-right         
-   0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  // top-right
-  -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  // bottom-left
-  -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  // top-left
-  // Front face
-  -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  // bottom-left
-   0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  // bottom-right
-   0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  // top-right
-   0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  // top-right
-  -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,  // top-left
-  -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  // bottom-left
-  // Left face
-  -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  // top-right
-  -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  // top-left
-  -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  // bottom-left
-  -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  // bottom-left
-  -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  // bottom-right
-  -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  // top-right
-  // Right face
-   0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  // top-left
-   0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  // bottom-right
-   0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  // top-right         
-   0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  // bottom-right
-   0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  // top-left
-   0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  // bottom-left     
-  // Bottom face
-  -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  // top-right
-   0.5f, -0.5f, -0.5f,  1.0f, 1.0f,  // top-left
-   0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  // bottom-left
-   0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  // bottom-left
-  -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  // bottom-right
-  -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  // top-right
-  // Top face
-  -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  // top-left
-   0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  // bottom-right
-   0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  // top-right     
-   0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  // bottom-right
-  -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  // top-left
-  -0.5f,  0.5f,  0.5f,  0.0f, 0.0f   // bottom-left 
+// 3 floats, 3 floats -> position, normal vectors
+constexpr std::array<float, 6 * 6 * 6> cubeVertices{
+  -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+   0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
+   0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
+   0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
+  -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
+  -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
+
+  -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+   0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+   0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+   0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+  -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+  -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+
+  -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+  -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+  -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+  -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+  -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+  -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+
+   0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+   0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+   0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+   0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+   0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+   0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+
+  -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+   0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+   0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+   0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+  -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+  -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+
+  -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+   0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+   0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+   0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+  -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+  -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
 };
 
 // each row corresponds to a vertex:

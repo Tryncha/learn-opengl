@@ -4,8 +4,8 @@ in vec3 TexCoords;
 
 out vec4 FragColor;
 
-uniform samplerCube u_Skybox;
+uniform samplerCube u_SkyboxTexture;
 
 void main() {
-  FragColor = texture(u_Skybox, TexCoords);
+  FragColor = texture(u_SkyboxTexture, TexCoords);
 }

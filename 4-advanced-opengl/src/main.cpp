@@ -233,15 +233,15 @@ int main(int, char**) {
   glBufferData(GL_ARRAY_BUFFER, data::cubeVertices.size() * sizeof(float),
                data::cubeVertices.data(), GL_STATIC_DRAW);
 
-  constexpr std::size_t cubeStride{5 * sizeof(float)};
+  constexpr std::size_t cubeStride{6 * sizeof(float)};
 
   // position attribute
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, cubeStride,
                         reinterpret_cast<void*>(0));
   glEnableVertexAttribArray(0);
 
-  // texture coords attribute
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, cubeStride,
+  // normal vectors attribute
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, cubeStride,
                         reinterpret_cast<void*>(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
 
@@ -268,9 +268,6 @@ int main(int, char**) {
 
   glBindVertexArray(0);
 
-  // texture
-  unsigned int cubeTexture{loadTexture("resources/textures/container.jpg")};
-
   // cubemap
   const std::array<std::string, 6> cubemapFacesPaths{
       "resources/textures/skybox/right.jpg",
@@ -283,10 +280,10 @@ int main(int, char**) {
   unsigned int cubemapTexture{loadCubemap(cubemapFacesPaths)};
 
   cubeShader.use();
-  cubeShader.setInt("u_Texture1", 0);
+  cubeShader.setInt("u_SkyboxTexture", 0);
 
   skyboxShader.use();
-  skyboxShader.setInt("u_Skybox", 0);
+  skyboxShader.setInt("u_SkyboxTexture", 0);
 
   while (!glfwWindowShouldClose(window)) {
     stabilizeFrame();
@@ -302,13 +299,15 @@ int main(int, char**) {
 
     // Setting uniforms
     cubeShader.use();
+    cubeShader.setVec3("u_CameraPosition", camera.getPosition());
+
     cubeShader.setMat4("u_Projection", projection);
     cubeShader.setMat4("u_View", camera.getViewMatrix());
 
     // 1. Cube
     glBindVertexArray(cubeVAO);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, cubeTexture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 
     cubeShader.setMat4("u_Model", glm::mat4(1.0));
 
