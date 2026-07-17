@@ -113,6 +113,7 @@ void Shader::setBool(const std::string& name, bool value) const {
 void Shader::setVec2(const std::string& name, const glm::vec2& vec) const {
   glUniform2fv(glGetUniformLocation(m_shaderProgram, name.c_str()), 1, &vec[0]);
 }
+
 void Shader::setVec2(const std::string& name, float x, float y) const {
   glUniform2f(glGetUniformLocation(m_shaderProgram, name.c_str()), x, y);
 }
@@ -120,6 +121,7 @@ void Shader::setVec2(const std::string& name, float x, float y) const {
 void Shader::setVec3(const std::string& name, const glm::vec3& vec) const {
   glUniform3fv(glGetUniformLocation(m_shaderProgram, name.c_str()), 1, &vec[0]);
 }
+
 void Shader::setVec3(const std::string& name, float x, float y, float z) const {
   glUniform3f(glGetUniformLocation(m_shaderProgram, name.c_str()), x, y, z);
 }
@@ -127,6 +129,7 @@ void Shader::setVec3(const std::string& name, float x, float y, float z) const {
 void Shader::setVec4(const std::string& name, const glm::vec4& vec) const {
   glUniform4fv(glGetUniformLocation(m_shaderProgram, name.c_str()), 1, &vec[0]);
 }
+
 void Shader::setVec4(const std::string& name, float x, float y, float z,
                      float w) const {
   glUniform4f(glGetUniformLocation(m_shaderProgram, name.c_str()), x, y, z, w);
@@ -137,11 +140,19 @@ void Shader::setMat2(const std::string& name, const glm::mat2& mat) const {
   glUniformMatrix2fv(glGetUniformLocation(m_shaderProgram, name.c_str()), 1,
                      GL_FALSE, &mat[0][0]);
 }
+
 void Shader::setMat3(const std::string& name, const glm::mat3& mat) const {
   glUniformMatrix3fv(glGetUniformLocation(m_shaderProgram, name.c_str()), 1,
                      GL_FALSE, &mat[0][0]);
 }
+
 void Shader::setMat4(const std::string& name, const glm::mat4& mat) const {
   glUniformMatrix4fv(glGetUniformLocation(m_shaderProgram, name.c_str()), 1,
                      GL_FALSE, &mat[0][0]);
+}
+
+void Shader::setUniformBlock(const std::string& name, int value) {
+  glUniformBlockBinding(m_shaderProgram,
+                        glGetUniformBlockIndex(m_shaderProgram, name.c_str()),
+                        value);
 }

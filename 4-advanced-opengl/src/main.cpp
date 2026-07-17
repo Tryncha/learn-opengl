@@ -5,7 +5,6 @@
 
 #include <stb_image/stb_image.h>
 
-#include <cstddef>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -212,14 +211,6 @@ int main(int, char**) {
   // Configure global opengl state
   glEnable(GL_DEPTH_TEST);
 
-  // build and compile shaders
-  Shader cubeShader{
-      (std::string(CHAPTER_DIR) + "/shaders/cube_vertex.glsl").c_str(),
-      (std::string(CHAPTER_DIR) + "/shaders/cube_fragment.glsl").c_str()};
-  Shader skyboxShader{
-      (std::string(CHAPTER_DIR) + "/shaders/skybox_vertex.glsl").c_str(),
-      (std::string(CHAPTER_DIR) + "/shaders/skybox_fragment.glsl").c_str()};
-
   // reminder: sizeof(float) == 4 bytes
   // 1. cube's VAO (and VBO) config
   unsigned int cubeVBO{};
@@ -233,57 +224,49 @@ int main(int, char**) {
   glBufferData(GL_ARRAY_BUFFER, data::cubeVertices.size() * sizeof(float),
                data::cubeVertices.data(), GL_STATIC_DRAW);
 
-  constexpr std::size_t cubeStride{6 * sizeof(float)};
-
   // position attribute
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, cubeStride,
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
                         reinterpret_cast<void*>(0));
   glEnableVertexAttribArray(0);
-
-  // normal vectors attribute
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, cubeStride,
-                        reinterpret_cast<void*>(3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-
   glBindVertexArray(0);
 
-  // 2. skybox's VAO (and VBO) config
-  unsigned int skyboxVBO{};
-  unsigned int skyboxVAO{};
+  // build and compile shaders
+  Shader redShader{
+      (std::string(CHAPTER_DIR) + "/shaders/vrtx_cube.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/frag_red.glsl").c_str()};
+  Shader greenShader{
+      (std::string(CHAPTER_DIR) + "/shaders/vrtx_cube.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/frag_green.glsl").c_str()};
+  Shader blueShader{
+      (std::string(CHAPTER_DIR) + "/shaders/vrtx_cube.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/frag_blue.glsl").c_str()};
+  Shader yellowShader{
+      (std::string(CHAPTER_DIR) + "/shaders/vrtx_cube.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/frag_yellow.glsl").c_str()};
 
-  glGenVertexArrays(1, &skyboxVAO);
-  glGenBuffers(1, &skyboxVBO);
-  glBindVertexArray(skyboxVAO);
+  redShader.use();
+  redShader.setUniformBlock("ub_Matrices", 0);
 
-  glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-  glBufferData(GL_ARRAY_BUFFER, data::skyboxVertices.size() * sizeof(float),
-               data::skyboxVertices.data(), GL_STATIC_DRAW);
+  greenShader.use();
+  greenShader.setUniformBlock("ub_Matrices", 0);
 
-  constexpr std::size_t skyboxStride{3 * sizeof(float)};
+  blueShader.use();
+  blueShader.setUniformBlock("ub_Matrices", 0);
 
-  // position attribute
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, skyboxStride,
-                        reinterpret_cast<void*>(0));
-  glEnableVertexAttribArray(0);
+  yellowShader.use();
+  yellowShader.setUniformBlock("ub_Matrices", 0);
 
-  glBindVertexArray(0);
+  // Uniform buffer objects
+  unsigned int matricesUBO{};
+  glGenBuffers(1, &matricesUBO);
 
-  // cubemap
-  const std::array<std::string, 6> cubemapFacesPaths{
-      "resources/textures/skybox/right.jpg",
-      "resources/textures/skybox/left.jpg",
-      "resources/textures/skybox/top.jpg",
-      "resources/textures/skybox/bottom.jpg",
-      "resources/textures/skybox/front.jpg",
-      "resources/textures/skybox/back.jpg"};
+  glBindBuffer(GL_UNIFORM_BUFFER, matricesUBO);
+  glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr,
+               GL_STATIC_DRAW);
+  glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-  unsigned int cubemapTexture{loadCubemap(cubemapFacesPaths)};
-
-  cubeShader.use();
-  cubeShader.setInt("u_SkyboxTexture", 0);
-
-  skyboxShader.use();
-  skyboxShader.setInt("u_SkyboxTexture", 0);
+  glBindBufferRange(GL_UNIFORM_BUFFER, 0, matricesUBO, 0,
+                    2 * sizeof(glm::mat4));
 
   while (!glfwWindowShouldClose(window)) {
     stabilizeFrame();
@@ -293,56 +276,75 @@ int main(int, char**) {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Setting view and projection matrices
-    glm::mat4 projection{glm::perspective(glm::radians(camera.getFov()),
-                                          window::aspectRatio, 0.1f, 100.0f)};
+    // Projection matrix
+    float fov{glm::radians(camera.getFov())};
+    glm::mat4 projection{
+        glm::perspective(fov, window::aspectRatio, 0.1f, 100.0f)};
 
-    // Setting uniforms
-    cubeShader.use();
-    cubeShader.setVec3("u_CameraPosition", camera.getPosition());
+    glBindBuffer(GL_UNIFORM_BUFFER, matricesUBO);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4),
+                    glm::value_ptr(projection));
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    cubeShader.setMat4("u_Projection", projection);
-    cubeShader.setMat4("u_View", camera.getViewMatrix());
+    // View matrix
+    glm::mat4 view{camera.getViewMatrix()};
 
-    // 1. Cube
+    glBindBuffer(GL_UNIFORM_BUFFER, matricesUBO);
+    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4),
+                    glm::value_ptr(view));
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    // Red cube, top-left
+    glm::mat4 redModel{glm::mat4(1.0)};
+    redModel = glm::translate(redModel, glm::vec3(-0.75f, 0.75f, 0.0f));
+
+    redShader.use();
+    redShader.setMat4("u_Model", redModel);
+
     glBindVertexArray(cubeVAO);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-
-    cubeShader.setMat4("u_Model", glm::mat4(1.0));
-
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
 
-    // 2. Skybox
-    // Change depth function so depth test passes when values
-    // are equal to depth buffer's content
-    glDepthFunc(GL_LEQUAL);
+    // Green cube, top-right
+    glm::mat4 greenModel{glm::mat4(1.0)};
+    greenModel = glm::translate(greenModel, glm::vec3(0.75f, 0.75f, 0.0f));
 
-    skyboxShader.use();
-    skyboxShader.setMat4("u_Projection", projection);
-    skyboxShader.setMat4("u_View",
-                         glm::mat4(glm::mat3(camera.getViewMatrix())));
-    // skyboxShader.setMat4("u_View", camera.getViewMatrix());
+    greenShader.use();
+    greenShader.setMat4("u_Model", greenModel);
 
-    glBindVertexArray(skyboxVAO);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-
+    glBindVertexArray(cubeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
 
-    // Set depth function back to default
-    glDepthFunc(GL_LESS);
+    // Blue cube, bottom-right
+    glm::mat4 blueModel{glm::mat4(1.0)};
+    blueModel = glm::translate(blueModel, glm::vec3(0.75f, -0.75f, 0.0f));
+
+    blueShader.use();
+    blueShader.setMat4("u_Model", blueModel);
+
+    glBindVertexArray(cubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+
+    // Yellow cube, bottom-left
+    glm::mat4 yellowModel{glm::mat4(1.0)};
+    yellowModel = glm::translate(yellowModel, glm::vec3(-0.75f, -0.75f, 0.0f));
+
+    yellowShader.use();
+    yellowShader.setMat4("u_Model", yellowModel);
+
+    glBindVertexArray(cubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
 
   glDeleteVertexArrays(1, &cubeVAO);
-  glDeleteVertexArrays(1, &skyboxVAO);
   glDeleteBuffers(1, &cubeVBO);
-  glDeleteBuffers(1, &skyboxVBO);
+  glDeleteBuffers(1, &matricesUBO);
 
   glfwTerminate();
   return 0;

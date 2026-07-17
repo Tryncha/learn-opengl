@@ -33,6 +33,8 @@ class Shader {
   void setMat3(const std::string& name, const glm::mat3& mat) const;
   void setMat4(const std::string& name, const glm::mat4& mat) const;
 
+  void setUniformBlock(const std::string& name, int value);
+
  private:
   unsigned int m_shaderProgram;
 };
