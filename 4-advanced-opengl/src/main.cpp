@@ -232,16 +232,16 @@ int main(int, char**) {
 
   // build and compile shaders
   Shader redShader{
-      (std::string(CHAPTER_DIR) + "/shaders/vrtx_cube.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/vert_cube.glsl").c_str(),
       (std::string(CHAPTER_DIR) + "/shaders/frag_red.glsl").c_str()};
   Shader greenShader{
-      (std::string(CHAPTER_DIR) + "/shaders/vrtx_cube.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/vert_cube.glsl").c_str(),
       (std::string(CHAPTER_DIR) + "/shaders/frag_green.glsl").c_str()};
   Shader blueShader{
-      (std::string(CHAPTER_DIR) + "/shaders/vrtx_cube.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/vert_cube.glsl").c_str(),
       (std::string(CHAPTER_DIR) + "/shaders/frag_blue.glsl").c_str()};
   Shader yellowShader{
-      (std::string(CHAPTER_DIR) + "/shaders/vrtx_cube.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/vert_cube.glsl").c_str(),
       (std::string(CHAPTER_DIR) + "/shaders/frag_yellow.glsl").c_str()};
 
   redShader.use();
