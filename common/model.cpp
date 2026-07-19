@@ -18,6 +18,9 @@
 
 // constructor, expects a filepath to a 3D model.
 Model::Model(const std::string& path, bool gamma) : m_gamma(gamma) {
+  // Tell stb_image.h to flip loaded texture's on the y-axis
+  // (before loading model)
+  stbi_set_flip_vertically_on_load(true);
   loadModel(path);
 }
 
