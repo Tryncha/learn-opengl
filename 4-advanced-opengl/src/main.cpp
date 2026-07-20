@@ -144,6 +144,9 @@ int main(int, char**) {
     // Don't forget to enable shader before setting uniforms
     ourShader.use();
 
+    // Set time
+    ourShader.setFloat("u_Time", static_cast<float>(glfwGetTime()));
+
     // Model, view and projection matrices
     glm::mat4 projection{glm::perspective(glm::radians(camera.getFov()),
                                           window::aspectRatio, 0.1f, 100.0f)};
