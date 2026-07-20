@@ -103,7 +103,6 @@ int main(int, char**) {
   }
 
   glfwMakeContextCurrent(window);
-
   // Hides the cursor and captures it (makes it stay in the center)
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -125,42 +124,51 @@ int main(int, char**) {
   glEnable(GL_DEPTH_TEST);
 
   // Build and compile shaders
-  Shader ourShader{
-      (std::string(CHAPTER_DIR) + "/shaders/vertex.glsl").c_str(),
-      (std::string(CHAPTER_DIR) + "/shaders/fragment.glsl").c_str(),
-      (std::string(CHAPTER_DIR) + "/shaders/geometry.glsl").c_str()};
+  Shader baseShader{
+      (std::string(CHAPTER_DIR) + "/shaders/vert_model.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/frag_model.glsl").c_str()};
+  Shader normalShader{
+      (std::string(CHAPTER_DIR) + "/shaders/vert_normal.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/frag_normal.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/geom_normal.glsl").c_str()};
 
   // Load model
-  Model ourModel{"resources/objects/backpack/backpack.obj"};
+  Model backpackModel{"resources/objects/backpack/backpack.obj"};
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
     stabilizeFrame();
     processInput(window);
 
-    glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Don't forget to enable shader before setting uniforms
-    ourShader.use();
-
-    // Set time
-    ourShader.setFloat("u_Time", static_cast<float>(glfwGetTime()));
+    baseShader.use();
 
     // Model, view and projection matrices
     glm::mat4 projection{glm::perspective(glm::radians(camera.getFov()),
                                           window::aspectRatio, 0.1f, 100.0f)};
 
-    ourShader.setMat4("u_Projection", projection);
-    ourShader.setMat4("u_View", camera.getViewMatrix());
+    baseShader.setMat4("u_Projection", projection);
+    baseShader.setMat4("u_View", camera.getViewMatrix());
 
     // Render the loaded model
     glm::mat4 model{glm::mat4(1.0)};
     model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
     model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
 
-    ourShader.setMat4("u_Model", model);
-    ourModel.draw(ourShader);
+    baseShader.setMat4("u_Model", model);
+
+    backpackModel.draw(baseShader);
+
+    // Draw model with normal visualizing geometry shader
+    normalShader.use();
+    normalShader.setMat4("u_Projection", projection);
+    normalShader.setMat4("u_View", camera.getViewMatrix());
+    normalShader.setMat4("u_Model", model);
+
+    backpackModel.draw(normalShader);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
