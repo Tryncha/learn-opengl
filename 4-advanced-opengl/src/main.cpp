@@ -160,7 +160,9 @@ int main(int, char**) {
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
                         reinterpret_cast<void*>(2 * sizeof(float)));
 
-  // Create offsets manually
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+  // Create offsets manually and store them in a VBO
   std::array<glm::vec2, 100> translations{};
   std::size_t index{};
   float offset{0.1f};
@@ -173,6 +175,20 @@ int main(int, char**) {
     }
   }
 
+  unsigned int instanceVBO{};
+  glGenBuffers(1, &instanceVBO);
+
+  glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+  glBufferData(GL_ARRAY_BUFFER, translations.size() * sizeof(glm::vec2),
+               translations.data(), GL_STATIC_DRAW);
+
+  glEnableVertexAttribArray(2);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float),
+                        reinterpret_cast<void*>(0));
+
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glVertexAttribDivisor(2, 1);
+
   // Render loop
   while (!glfwWindowShouldClose(window)) {
     stabilizeFrame();
@@ -183,10 +199,6 @@ int main(int, char**) {
 
     // Don't forget to enable shader before setting uniforms
     ourShader.use();
-    for (std::size_t i{0}; i < 100; ++i) {
-      ourShader.setVec2("u_Offsets[" + std::to_string(i) + ']',
-                        translations[i]);
-    }
 
     glBindVertexArray(quadVAO);
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
