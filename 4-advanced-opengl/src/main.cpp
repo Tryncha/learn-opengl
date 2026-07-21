@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
+#include <array>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -11,7 +12,6 @@
 
 #include "camera.h"
 #include "constants.h"
-#include "model.h"
 #include "shader.h"
 
 // clang-format off
@@ -29,6 +29,19 @@ inline bool isFirstInput{true};
 inline float lastX{window::width  / 2};
 inline float lastY{window::height / 2};
 }  // namespace cursor
+
+namespace data {
+constexpr std::array<float, 5 * 3 * 2> quadVertices{
+  // positions     // colors
+  -0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
+   0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
+  -0.05f, -0.05f,  0.0f, 0.0f, 1.0f,
+
+  -0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
+   0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
+   0.05f,  0.05f,  0.0f, 1.0f, 1.0f
+};
+} // namespace data
 // clang-format on
 
 // GLFW callbacks
@@ -124,16 +137,41 @@ int main(int, char**) {
   glEnable(GL_DEPTH_TEST);
 
   // Build and compile shaders
-  Shader baseShader{
-      (std::string(CHAPTER_DIR) + "/shaders/vert_model.glsl").c_str(),
-      (std::string(CHAPTER_DIR) + "/shaders/frag_model.glsl").c_str()};
-  Shader normalShader{
-      (std::string(CHAPTER_DIR) + "/shaders/vert_normal.glsl").c_str(),
-      (std::string(CHAPTER_DIR) + "/shaders/frag_normal.glsl").c_str(),
-      (std::string(CHAPTER_DIR) + "/shaders/geom_normal.glsl").c_str()};
+  Shader ourShader{
+      (std::string(CHAPTER_DIR) + "/shaders/vertex.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/fragment.glsl").c_str()};
 
-  // Load model
-  Model backpackModel{"resources/objects/backpack/backpack.obj"};
+  unsigned int quadVAO{};
+  unsigned int quadVBO{};
+
+  glGenVertexArrays(1, &quadVAO);
+  glGenBuffers(1, &quadVBO);
+
+  glBindVertexArray(quadVAO);
+  glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+  glBufferData(GL_ARRAY_BUFFER, data::quadVertices.size() * sizeof(float),
+               data::quadVertices.data(), GL_STATIC_DRAW);
+
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
+                        reinterpret_cast<void*>(0));
+
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
+                        reinterpret_cast<void*>(2 * sizeof(float)));
+
+  // Create offsets manually
+  std::array<glm::vec2, 100> translations{};
+  std::size_t index{};
+  float offset{0.1f};
+
+  for (int y{-10}; y < 10; y += 2) {
+    for (int x{-10}; x < 10; x += 2) {
+      translations[index] = glm::vec2{static_cast<float>(x) / 10.0f + offset,
+                                      static_cast<float>(y) / 10.0f + offset};
+      index++;
+    }
+  }
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
@@ -144,35 +182,22 @@ int main(int, char**) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Don't forget to enable shader before setting uniforms
-    baseShader.use();
+    ourShader.use();
+    for (std::size_t i{0}; i < 100; ++i) {
+      ourShader.setVec2("u_Offsets[" + std::to_string(i) + ']',
+                        translations[i]);
+    }
 
-    // Model, view and projection matrices
-    glm::mat4 projection{glm::perspective(glm::radians(camera.getFov()),
-                                          window::aspectRatio, 0.1f, 100.0f)};
-
-    baseShader.setMat4("u_Projection", projection);
-    baseShader.setMat4("u_View", camera.getViewMatrix());
-
-    // Render the loaded model
-    glm::mat4 model{glm::mat4(1.0)};
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
-
-    baseShader.setMat4("u_Model", model);
-
-    backpackModel.draw(baseShader);
-
-    // Draw model with normal visualizing geometry shader
-    normalShader.use();
-    normalShader.setMat4("u_Projection", projection);
-    normalShader.setMat4("u_View", camera.getViewMatrix());
-    normalShader.setMat4("u_Model", model);
-
-    backpackModel.draw(normalShader);
+    glBindVertexArray(quadVAO);
+    glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
+    glBindVertexArray(0);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
+
+  glDeleteVertexArrays(1, &quadVAO);
+  glDeleteBuffers(1, &quadVBO);
 
   glfwTerminate();
   return 0;
