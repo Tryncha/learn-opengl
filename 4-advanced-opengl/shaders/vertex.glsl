@@ -7,6 +7,7 @@ layout (location = 2) in vec2 a_Offset;
 out vec3 Color;
 
 void main() {
-  gl_Position = vec4(a_Position + a_Offset, 0.0, 1.0);
+  vec2 position = a_Position * (gl_InstanceID / 100.0);
+  gl_Position = vec4(position + a_Offset, 0.0, 1.0);
   Color = a_Color;
 }
