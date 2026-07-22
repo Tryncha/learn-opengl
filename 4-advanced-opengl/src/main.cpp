@@ -93,7 +93,7 @@ int main(int, char**) {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  // glfwWindowHint(GLFW_SAMPLES, 4);
+  glfwWindowHint(GLFW_SAMPLES, 4);
 
   GLFWwindow* window{glfwCreateWindow(
       window::width, window::height, "LearnOpenGL",
@@ -125,7 +125,7 @@ int main(int, char**) {
 
   // Configure global OpenGL state
   glEnable(GL_DEPTH_TEST);
-  // glEnable(GL_MULTISAMPLE);
+  glEnable(GL_MULTISAMPLE);
 
   // Build and compile shaders
   Shader ourShader{(std::string(CHAPTER_DIR) + "/shaders/vert.glsl").c_str(),
