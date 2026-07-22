@@ -4,6 +4,7 @@
 // clang-format on
 
 #include <array>
+#include <cstddef>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -12,6 +13,7 @@
 
 #include "camera.h"
 #include "constants.h"
+#include "model.h"
 #include "shader.h"
 
 // clang-format off
@@ -29,19 +31,6 @@ inline bool isFirstInput{true};
 inline float lastX{window::width  / 2};
 inline float lastY{window::height / 2};
 }  // namespace cursor
-
-namespace data {
-constexpr std::array<float, 5 * 3 * 2> quadVertices{
-  // positions     // colors
-  -0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
-   0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
-  -0.05f, -0.05f,  0.0f, 0.0f, 1.0f,
-
-  -0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
-   0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
-   0.05f,  0.05f,  0.0f, 1.0f, 1.0f
-};
-} // namespace data
 // clang-format on
 
 // GLFW callbacks
@@ -95,6 +84,12 @@ void processInput(GLFWwindow* window) {
   camera.processKeyboardInput(window);
 }
 
+float genRandomDisplacement(float offset) {
+  return static_cast<float>(rand() % static_cast<int>(2 * offset * 100)) /
+             100.0f -
+         offset;
+}
+
 int main(int, char**) {
   if (!glfwInit()) {
     std::cerr << "Failed to initialize GLFW.\n";
@@ -141,53 +136,46 @@ int main(int, char**) {
       (std::string(CHAPTER_DIR) + "/shaders/vertex.glsl").c_str(),
       (std::string(CHAPTER_DIR) + "/shaders/fragment.glsl").c_str()};
 
-  unsigned int quadVAO{};
-  unsigned int quadVBO{};
+  // Load models
+  Model planetModel{"resources/objects/planet/planet.obj"};
+  Model rockModel{"resources/objects/rock/rock.obj"};
 
-  glGenVertexArrays(1, &quadVAO);
-  glGenBuffers(1, &quadVBO);
+  // Preparing the scene
+  std::size_t rocksAmount{1000};
+  float radius{50.0f};
 
-  glBindVertexArray(quadVAO);
-  glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-  glBufferData(GL_ARRAY_BUFFER, data::quadVertices.size() * sizeof(float),
-               data::quadVertices.data(), GL_STATIC_DRAW);
+  glm::mat4* modelMatrices{new glm::mat4[rocksAmount]};
 
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
-                        reinterpret_cast<void*>(0));
+  // Initialize random seed
+  srand(static_cast<unsigned int>(glfwGetTime()));
 
-  glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
-                        reinterpret_cast<void*>(2 * sizeof(float)));
+  for (std::size_t i{0}; i < rocksAmount; ++i) {
+    glm::mat4 model{glm::mat4(1.0)};
 
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
+    // 1. Translation:
+    // Displace along circle with 'radius' in range [-offset, offset]
+    float angle{static_cast<float>(i) / static_cast<float>(rocksAmount) *
+                360.0f};
 
-  // Create offsets manually and store them in a VBO
-  std::array<glm::vec2, 100> translations{};
-  std::size_t index{};
-  float offset{0.1f};
+    // Keep height of field smaller compared to width of x and z
+    float x{std::sin(angle) * radius + genRandomDisplacement(2.5f)};
+    float y{genRandomDisplacement(2.5f) * 0.4f};
+    float z{std::cos(angle) * radius + genRandomDisplacement(2.5f)};
 
-  for (int y{-10}; y < 10; y += 2) {
-    for (int x{-10}; x < 10; x += 2) {
-      translations[index] = glm::vec2{static_cast<float>(x) / 10.0f + offset,
-                                      static_cast<float>(y) / 10.0f + offset};
-      index++;
-    }
+    model = glm::translate(model, glm::vec3(x, y, z));
+
+    // 2. Scale between 0.05 and 0.25
+    float scaleFactor{static_cast<float>(rand() % 20) / 100.0f + 0.05f};
+    model = glm::scale(model, glm::vec3(scaleFactor));
+
+    // 3. Add random rotation around a semi-randomly
+    // picked rotation axis vector
+    float rotAngle{static_cast<float>(rand() % 360)};
+    model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
+
+    // 4. Add to list of matrices
+    modelMatrices[i] = model;
   }
-
-  unsigned int instanceVBO{};
-  glGenBuffers(1, &instanceVBO);
-
-  glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-  glBufferData(GL_ARRAY_BUFFER, translations.size() * sizeof(glm::vec2),
-               translations.data(), GL_STATIC_DRAW);
-
-  glEnableVertexAttribArray(2);
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float),
-                        reinterpret_cast<void*>(0));
-
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glVertexAttribDivisor(2, 1);
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
@@ -200,16 +188,31 @@ int main(int, char**) {
     // Don't forget to enable shader before setting uniforms
     ourShader.use();
 
-    glBindVertexArray(quadVAO);
-    glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
-    glBindVertexArray(0);
+    // View and projection matrices
+    glm::mat4 projection{glm::perspective(glm::radians(camera.getFov()),
+                                          window::aspectRatio, 0.1f, 100.0f)};
+
+    ourShader.setMat4("u_Projection", projection);
+    ourShader.setMat4("u_View", camera.getViewMatrix());
+
+    // Planet
+    glm::mat4 model{glm::mat4(1.0)};
+    model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(4.0f));
+
+    ourShader.setMat4("u_Model", model);
+
+    planetModel.draw(ourShader);
+
+    // Rocks
+    for (std::size_t i{0}; i < rocksAmount; ++i) {
+      ourShader.setMat4("u_Model", modelMatrices[i]);
+      rockModel.draw(ourShader);
+    }
 
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
-
-  glDeleteVertexArrays(1, &quadVAO);
-  glDeleteBuffers(1, &quadVBO);
 
   glfwTerminate();
   return 0;
