@@ -13,7 +13,7 @@
 
 #include "camera.h"
 #include "constants.h"
-#include "model.h"
+#include "data.h"
 #include "shader.h"
 
 // clang-format off
@@ -84,12 +84,6 @@ void processInput(GLFWwindow* window) {
   camera.processKeyboardInput(window);
 }
 
-float genRandomDisplacement(float offset) {
-  return static_cast<float>(rand() % static_cast<int>(2 * offset * 100)) /
-             100.0f -
-         offset;
-}
-
 int main(int, char**) {
   if (!glfwInit()) {
     std::cerr << "Failed to initialize GLFW.\n";
@@ -99,6 +93,7 @@ int main(int, char**) {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  // glfwWindowHint(GLFW_SAMPLES, 4);
 
   GLFWwindow* window{glfwCreateWindow(
       window::width, window::height, "LearnOpenGL",
@@ -130,90 +125,28 @@ int main(int, char**) {
 
   // Configure global OpenGL state
   glEnable(GL_DEPTH_TEST);
+  // glEnable(GL_MULTISAMPLE);
 
   // Build and compile shaders
-  Shader planetShader{
-      (std::string(CHAPTER_DIR) + "/shaders/vert_planet.glsl").c_str(),
-      (std::string(CHAPTER_DIR) + "/shaders/frag_planet.glsl").c_str()};
-  Shader rockShader{
-      (std::string(CHAPTER_DIR) + "/shaders/vert_rock.glsl").c_str(),
-      (std::string(CHAPTER_DIR) + "/shaders/frag_rock.glsl").c_str()};
+  Shader ourShader{(std::string(CHAPTER_DIR) + "/shaders/vert.glsl").c_str(),
+                   (std::string(CHAPTER_DIR) + "/shaders/frag.glsl").c_str()};
 
-  // Load models
-  Model planetModel{"resources/objects/planet/planet.obj"};
-  Model rockModel{"resources/objects/rock/rock.obj"};
+  // Setup cube VAO (and VBO)
+  unsigned int cubeVBO{};
+  unsigned int cubeVAO{};
 
-  // Preparing the scene
-  const std::size_t rocksAmount{10000};
-  float radius{125.0f};
-  float offset{20.0f};
+  glGenVertexArrays(1, &cubeVAO);
+  glGenBuffers(1, &cubeVBO);
 
-  std::array<glm::mat4, rocksAmount> modelMatrices{};
+  glBindVertexArray(cubeVAO);
+  glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+  glBufferData(GL_ARRAY_BUFFER, data::vertexData.size() * sizeof(float),
+               data::vertexData.data(), GL_STATIC_DRAW);
 
-  // Initialize random seed
-  srand(static_cast<unsigned int>(glfwGetTime()));
-
-  for (std::size_t i{0}; i < rocksAmount; ++i) {
-    glm::mat4 model{glm::mat4(1.0)};
-
-    // 1. Translation:
-    // Displace along circle with 'radius' in range [-offset, offset]
-    float angle{static_cast<float>(i) / static_cast<float>(rocksAmount) *
-                360.0f};
-
-    // Keep height of field smaller compared to width of x and z
-    float x{std::sin(angle) * radius + genRandomDisplacement(offset)};
-    float y{genRandomDisplacement(offset) * 0.4f};
-    float z{std::cos(angle) * radius + genRandomDisplacement(offset)};
-
-    model = glm::translate(model, glm::vec3(x, y, z));
-
-    // 2. Scale between 0.05 and 0.25
-    float scaleFactor{static_cast<float>(rand() % 20) / 100.0f + 0.05f};
-    model = glm::scale(model, glm::vec3(scaleFactor));
-
-    // 3. Add random rotation around a semi-randomly
-    // picked rotation axis vector
-    float rotAngle{static_cast<float>(rand() % 360)};
-    model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
-
-    // 4. Add to list of matrices
-    modelMatrices[i] = model;
-  }
-
-  unsigned int buffer{};
-  glGenBuffers(1, &buffer);
-  glBindBuffer(GL_ARRAY_BUFFER, buffer);
-  glBufferData(GL_ARRAY_BUFFER, rocksAmount * sizeof(glm::mat4),
-               modelMatrices.data(), GL_STATIC_DRAW);
-
-  for (std::size_t i{0}; i < rockModel.getMeshes().size(); ++i) {
-    unsigned int meshVAO{rockModel.getMeshes()[i].getVAO()};
-    glBindVertexArray(meshVAO);
-
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4),
-                          reinterpret_cast<void*>(0));
-
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4),
-                          reinterpret_cast<void*>(1 * sizeof(glm::vec4)));
-
-    glEnableVertexAttribArray(5);
-    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4),
-                          reinterpret_cast<void*>(2 * sizeof(glm::vec4)));
-
-    glEnableVertexAttribArray(6);
-    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4),
-                          reinterpret_cast<void*>(3 * sizeof(glm::vec4)));
-
-    glVertexAttribDivisor(3, 1);
-    glVertexAttribDivisor(4, 1);
-    glVertexAttribDivisor(5, 1);
-    glVertexAttribDivisor(6, 1);
-
-    glBindVertexArray(0);
-  }
+  // Position attribute
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
+                        reinterpret_cast<void*>(0));
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
@@ -223,47 +156,27 @@ int main(int, char**) {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Don't forget to enable shader before setting uniforms
-    planetShader.use();
+    ourShader.use();
 
-    // View and projection matrices
+    // Mode, view and projection matrices
     glm::mat4 projection{glm::perspective(glm::radians(camera.getFov()),
-                                          window::aspectRatio, 0.1f, 1000.0f)};
+                                          window::aspectRatio, 0.1f, 100.0f)};
 
-    planetShader.setMat4("u_Projection", projection);
-    planetShader.setMat4("u_View", camera.getViewMatrix());
+    ourShader.setMat4("u_Projection", projection);
+    ourShader.setMat4("u_View", camera.getViewMatrix());
+    ourShader.setMat4("u_Model", glm::mat4(1.0));
 
-    // Planet
-    glm::mat4 model{glm::mat4(1.0)};
-    model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(4.0f));
-
-    planetShader.setMat4("u_Model", model);
-
-    planetModel.draw(planetShader);
-
-    // Rocks
-    rockShader.use();
-
-    rockShader.setMat4("u_Projection", projection);
-    rockShader.setMat4("u_View", camera.getViewMatrix());
-
-    rockShader.setInt("u_TextureDiffuse1", 0);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, rockModel.getTexturesLoaded()[0].id);
-
-    for (std::size_t i{0}; i < rockModel.getMeshes().size(); ++i) {
-      glBindVertexArray(rockModel.getMeshes()[i].getVAO());
-      glDrawElementsInstanced(
-          GL_TRIANGLES,
-          static_cast<int>(rockModel.getMeshes()[i].getIndices().size()),
-          GL_UNSIGNED_INT, 0, rocksAmount);
-    }
+    glBindVertexArray(cubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
+
+  glDeleteBuffers(1, &cubeVBO);
+  glDeleteVertexArrays(1, &cubeVAO);
+
+  ourShader.remove();
 
   glfwTerminate();
   return 0;
