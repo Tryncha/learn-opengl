@@ -32,6 +32,10 @@ class Mesh {
        const std::vector<unsigned int>& indices,
        const std::vector<Texture>& textures);
 
+  // Getters/Setters
+  std::vector<unsigned int> getIndices() const;
+  unsigned int getVAO() const;
+
   void draw(const Shader& shader);
 
  private:

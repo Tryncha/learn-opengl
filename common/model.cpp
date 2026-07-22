@@ -24,6 +24,12 @@ Model::Model(const std::string& path, bool gamma) : m_gamma(gamma) {
   loadModel(path);
 }
 
+// Getters/Setters
+std::vector<Mesh> Model::getMeshes() const { return m_meshes; }
+std::vector<Texture> Model::getTexturesLoaded() const {
+  return m_texturesLoaded;
+}
+
 // draws the model, and thus all its meshes
 void Model::draw(const Shader& shader) {
   for (std::size_t i{0}; i < m_meshes.size(); ++i) {

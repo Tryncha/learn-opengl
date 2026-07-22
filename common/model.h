@@ -16,6 +16,10 @@ class Model {
   // constructor, expects a filepath to a 3D model.
   Model(const std::string& path, bool gammaCorrection = false);
 
+  // Getters/Setters
+  std::vector<Mesh> getMeshes() const;
+  std::vector<Texture> getTexturesLoaded() const;
+
   // draws the model, and thus all its meshes
   void draw(const Shader& shader);
 

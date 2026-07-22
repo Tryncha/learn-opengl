@@ -132,19 +132,23 @@ int main(int, char**) {
   glEnable(GL_DEPTH_TEST);
 
   // Build and compile shaders
-  Shader ourShader{
-      (std::string(CHAPTER_DIR) + "/shaders/vertex.glsl").c_str(),
-      (std::string(CHAPTER_DIR) + "/shaders/fragment.glsl").c_str()};
+  Shader planetShader{
+      (std::string(CHAPTER_DIR) + "/shaders/vert_planet.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/frag_planet.glsl").c_str()};
+  Shader rockShader{
+      (std::string(CHAPTER_DIR) + "/shaders/vert_rock.glsl").c_str(),
+      (std::string(CHAPTER_DIR) + "/shaders/frag_rock.glsl").c_str()};
 
   // Load models
   Model planetModel{"resources/objects/planet/planet.obj"};
   Model rockModel{"resources/objects/rock/rock.obj"};
 
   // Preparing the scene
-  std::size_t rocksAmount{1000};
-  float radius{50.0f};
+  const std::size_t rocksAmount{10000};
+  float radius{125.0f};
+  float offset{20.0f};
 
-  glm::mat4* modelMatrices{new glm::mat4[rocksAmount]};
+  std::array<glm::mat4, rocksAmount> modelMatrices{};
 
   // Initialize random seed
   srand(static_cast<unsigned int>(glfwGetTime()));
@@ -158,9 +162,9 @@ int main(int, char**) {
                 360.0f};
 
     // Keep height of field smaller compared to width of x and z
-    float x{std::sin(angle) * radius + genRandomDisplacement(2.5f)};
-    float y{genRandomDisplacement(2.5f) * 0.4f};
-    float z{std::cos(angle) * radius + genRandomDisplacement(2.5f)};
+    float x{std::sin(angle) * radius + genRandomDisplacement(offset)};
+    float y{genRandomDisplacement(offset) * 0.4f};
+    float z{std::cos(angle) * radius + genRandomDisplacement(offset)};
 
     model = glm::translate(model, glm::vec3(x, y, z));
 
@@ -177,6 +181,40 @@ int main(int, char**) {
     modelMatrices[i] = model;
   }
 
+  unsigned int buffer{};
+  glGenBuffers(1, &buffer);
+  glBindBuffer(GL_ARRAY_BUFFER, buffer);
+  glBufferData(GL_ARRAY_BUFFER, rocksAmount * sizeof(glm::mat4),
+               modelMatrices.data(), GL_STATIC_DRAW);
+
+  for (std::size_t i{0}; i < rockModel.getMeshes().size(); ++i) {
+    unsigned int meshVAO{rockModel.getMeshes()[i].getVAO()};
+    glBindVertexArray(meshVAO);
+
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4),
+                          reinterpret_cast<void*>(0));
+
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4),
+                          reinterpret_cast<void*>(1 * sizeof(glm::vec4)));
+
+    glEnableVertexAttribArray(5);
+    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4),
+                          reinterpret_cast<void*>(2 * sizeof(glm::vec4)));
+
+    glEnableVertexAttribArray(6);
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4),
+                          reinterpret_cast<void*>(3 * sizeof(glm::vec4)));
+
+    glVertexAttribDivisor(3, 1);
+    glVertexAttribDivisor(4, 1);
+    glVertexAttribDivisor(5, 1);
+    glVertexAttribDivisor(6, 1);
+
+    glBindVertexArray(0);
+  }
+
   // Render loop
   while (!glfwWindowShouldClose(window)) {
     stabilizeFrame();
@@ -186,28 +224,41 @@ int main(int, char**) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Don't forget to enable shader before setting uniforms
-    ourShader.use();
+    planetShader.use();
 
     // View and projection matrices
     glm::mat4 projection{glm::perspective(glm::radians(camera.getFov()),
-                                          window::aspectRatio, 0.1f, 100.0f)};
+                                          window::aspectRatio, 0.1f, 1000.0f)};
 
-    ourShader.setMat4("u_Projection", projection);
-    ourShader.setMat4("u_View", camera.getViewMatrix());
+    planetShader.setMat4("u_Projection", projection);
+    planetShader.setMat4("u_View", camera.getViewMatrix());
 
     // Planet
     glm::mat4 model{glm::mat4(1.0)};
     model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
     model = glm::scale(model, glm::vec3(4.0f));
 
-    ourShader.setMat4("u_Model", model);
+    planetShader.setMat4("u_Model", model);
 
-    planetModel.draw(ourShader);
+    planetModel.draw(planetShader);
 
     // Rocks
-    for (std::size_t i{0}; i < rocksAmount; ++i) {
-      ourShader.setMat4("u_Model", modelMatrices[i]);
-      rockModel.draw(ourShader);
+    rockShader.use();
+
+    rockShader.setMat4("u_Projection", projection);
+    rockShader.setMat4("u_View", camera.getViewMatrix());
+
+    rockShader.setInt("u_TextureDiffuse1", 0);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, rockModel.getTexturesLoaded()[0].id);
+
+    for (std::size_t i{0}; i < rockModel.getMeshes().size(); ++i) {
+      glBindVertexArray(rockModel.getMeshes()[i].getVAO());
+      glDrawElementsInstanced(
+          GL_TRIANGLES,
+          static_cast<int>(rockModel.getMeshes()[i].getIndices().size()),
+          GL_UNSIGNED_INT, 0, rocksAmount);
     }
 
     glfwSwapBuffers(window);

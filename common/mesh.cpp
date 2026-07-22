@@ -16,6 +16,9 @@ Mesh::Mesh(const std::vector<Vertex>& vertices,
   setupMesh();
 };
 
+std::vector<unsigned int> Mesh::getIndices() const { return m_indices; }
+unsigned int Mesh::getVAO() const { return m_vao; }
+
 void Mesh::draw(const Shader& shader) {
   int diffuseNr{1};
   int specularNr{1};
