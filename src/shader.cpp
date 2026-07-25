@@ -2,6 +2,7 @@
 
 #include <glad/glad.h>
 
+#include <array>
 #include <fstream>
 #include <glm/glm.hpp>
 #include <iostream>
