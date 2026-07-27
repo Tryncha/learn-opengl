@@ -5,7 +5,7 @@
 
 #include <iostream>
 
-unsigned int loadTexture(const char* texturePath) {
+unsigned int loadTexture(const char* texturePath, bool hasGammaCorrection) {
   int width{};
   int height{};
   int nrChannels{};
@@ -18,29 +18,33 @@ unsigned int loadTexture(const char* texturePath) {
       stbi_load(texturePath, &width, &height, &nrChannels, 0)};
 
   if (textureData) {
-    unsigned int format{};
+    unsigned int internalFormat{};
+    unsigned int dataFormat{};
     switch (nrChannels) {
       case 1:
-        format = GL_RED;
+        internalFormat = GL_RED;
+        dataFormat = GL_RED;
         break;
+
       case 3:
-        format = GL_RGB;
+        internalFormat = hasGammaCorrection ? GL_SRGB : GL_RGB;
+        dataFormat = GL_RGB;
         break;
+
       case 4:
-        format = GL_RGBA;
+        internalFormat = hasGammaCorrection ? GL_SRGB_ALPHA : GL_RGBA;
+        dataFormat = GL_RGBA;
         break;
     }
 
     glBindTexture(GL_TEXTURE_2D, textureId);
-    glTexImage2D(GL_TEXTURE_2D, 0, static_cast<int>(format), width, height, 0,
-                 format, GL_UNSIGNED_BYTE, textureData);
+    glTexImage2D(GL_TEXTURE_2D, 0, static_cast<int>(internalFormat), width,
+                 height, 0, dataFormat, GL_UNSIGNED_BYTE, textureData);
 
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
-                    format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
-                    format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
                     GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
