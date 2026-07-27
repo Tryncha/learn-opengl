@@ -3,10 +3,14 @@
 
 // clang-format off
 namespace constants {
+constexpr float nearPlane{  0.1f};
+constexpr float farPlane {100.0f};
+
 constexpr float minPitch{-89.9f};
 constexpr float maxPitch{ 89.9f};
-constexpr float minFov  {  1.0f};
-constexpr float maxFov  { 45.0f};
+
+constexpr float minFov{ 1.0f};
+constexpr float maxFov{45.0f};
 }  // namespace constants
 
 namespace window {
