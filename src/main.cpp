@@ -14,32 +14,14 @@
 #include "camera.h"
 #include "constants.h"
 #include "data.h"
+#include "render.h"
 #include "shader.h"
 #include "textures.h"
 
 // Light configuration
-// clang-format off
-namespace lights {
-constexpr std::array<glm::vec3, 4> positions{
-  glm::vec3(-3.0f, 0.0f, 0.0f),
-  glm::vec3(-1.0f, 0.0f, 0.0f),
-  glm::vec3( 1.0f, 0.0f, 0.0f),
-  glm::vec3( 3.0f, 0.0f, 0.0f)
-};
-constexpr std::array<glm::vec3, 4> colors{
-  glm::vec3(0.25f),
-  glm::vec3(0.50f),
-  glm::vec3(0.75f),
-  glm::vec3(1.00f)
-};
-}  // namespace lights
-// clang-format on
-
-// Gamma correction configuration
-namespace gammaCorrection {
-inline bool isGammaEnable{false};
-inline bool isGammaKeyPressed{false};
-}  // namespace gammaCorrection
+namespace light {
+constexpr glm::vec3 position{glm::vec3(-2.0f, 4.0f, -1.0f)};
+}  // namespace light
 
 // `deltaTime` calculation to keep consistent the camera speed
 void stabilizeFrame() {
@@ -55,15 +37,6 @@ void processInput(GLFWwindow* window) {
 
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     glfwSetWindowShouldClose(window, true);
-
-  if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS &&
-      !gammaCorrection::isGammaKeyPressed) {
-    gammaCorrection::isGammaEnable = !gammaCorrection::isGammaEnable;
-    gammaCorrection::isGammaKeyPressed = true;
-  }
-  if (glfwGetKey(window, GLFW_KEY_G) == GLFW_RELEASE) {
-    gammaCorrection::isGammaKeyPressed = false;
-  }
 
   camera.processKeyboardInput(window);
 }
@@ -100,7 +73,6 @@ int main(int, char**) {
 
   // Hides the cursor and captures it (makes it stay in the center)
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
   // glfw callbacks
   glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
   glfwSetCursorPosCallback(window, cursorPosCallback);
@@ -108,8 +80,6 @@ int main(int, char**) {
 
   // Configure global OpenGL state
   glEnable(GL_DEPTH_TEST);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   // Create camera and save it as "user pointer" to
   // retrieve later by reference
@@ -117,16 +87,17 @@ int main(int, char**) {
   glfwSetWindowUserPointer(window, &camera);
 
   // Build and compile shaders
-  Shader ourShader{"shaders/vert.glsl", "shaders/frag.glsl"};
+  Shader depthShader{"shaders/vert_depth.glsl", "shaders/frag_depth.glsl"};
+  Shader debugDepthShader{"shaders/vert_debug_depth.glsl",
+                          "shaders/frag_debug_depth.glsl"};
 
   // Setup VAO (and VBO)
   unsigned int planeVBO{};
-  unsigned int planeVAO{};
 
-  glGenVertexArrays(1, &planeVAO);
+  glGenVertexArrays(1, &meshes::planeVAO);
   glGenBuffers(1, &planeVBO);
 
-  glBindVertexArray(planeVAO);
+  glBindVertexArray(meshes::planeVAO);
   glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
   glBufferData(GL_ARRAY_BUFFER, data::planeVertices.size() * sizeof(float),
                data::planeVertices.data(), GL_STATIC_DRAW);
@@ -152,11 +123,37 @@ int main(int, char**) {
 
   // Load textures
   unsigned int floorTex{loadTexture("assets/textures/wood.png", false)};
-  unsigned int floorTexGammaCorrected{
-      loadTexture("assets/textures/wood.png", true)};
 
-  ourShader.use();
-  ourShader.setInt("u_FloorTexture", 0);
+  // Configure depth map framebuffer
+  constexpr int shadowWidth{1024};
+  constexpr int shadowHeight{1024};
+
+  unsigned int depthMapFBO{};
+  glGenFramebuffers(1, &depthMapFBO);
+
+  // Create depth texture
+  unsigned int depthMap{};
+  glGenTextures(1, &depthMap);
+
+  glBindTexture(GL_TEXTURE_2D, depthMap);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadowWidth, shadowHeight,
+               0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+  // Attach depth texture as FBO's depth buffer
+  glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+                         depthMap, 0);
+  glDrawBuffer(GL_NONE);
+  glReadBuffer(GL_NONE);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  debugDepthShader.use();
+  debugDepthShader.setInt("u_DepthMap", 0);
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
@@ -166,48 +163,50 @@ int main(int, char**) {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    ourShader.use();
-    // Mode, view and projection matrices
-    glm::mat4 projection{
-        glm::perspective(glm::radians(camera.getFov()), window::aspectRatio,
-                         constants::nearPlane, constants::farPlane)};
+    // Render depth of the scene to texture (from light's perspective)
+    glm::mat4 lightProjection{glm::mat4(1.0f)};
+    glm::mat4 lightView{glm::mat4(1.0f)};
+    glm::mat4 lightSpace{glm::mat4(1.0f)};
 
-    ourShader.setMat4("u_Projection", projection);
-    ourShader.setMat4("u_View", camera.getViewMatrix());
+    constexpr float nearPlane{1.0f};
+    constexpr float farPlane{7.5f};
 
-    // Set uniforms
-    glUniform3fv(glGetUniformLocation(ourShader.getShaderProgramId(),
-                                      "u_LightPositions"),
-                 lights::positions.size(), &lights::positions[0][0]);
-    glUniform3fv(
-        glGetUniformLocation(ourShader.getShaderProgramId(), "u_LightColors"),
-        lights::colors.size(), &lights::colors[0][0]);
+    lightProjection =
+        glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
+    lightView = glm::lookAt(light::position, glm::vec3(0.0f),
+                            glm::vec3(0.0f, 1.0f, 0.0f));
+    lightSpace = lightProjection * lightView;
 
-    ourShader.setVec3("u_ViewPos", camera.getPosition());
-    ourShader.setBool("u_isGammaEnable", gammaCorrection::isGammaEnable);
+    // Render scene from light's point of view
+    depthShader.use();
+    depthShader.setMat4("u_LightSpace", lightSpace);
 
-    // Check gamma correction state
-    std::cout << "Using: "
-              << (gammaCorrection::isGammaEnable ? "Gamma Correction Enabled"
-                                                 : "Gamma Correction Disabled")
-              << '\n';
-
-    // Render plane
-    glBindVertexArray(planeVAO);
+    glViewport(0, 0, shadowWidth, shadowHeight);
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    glClear(GL_DEPTH_BUFFER_BIT);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, gammaCorrection::isGammaEnable
-                                     ? floorTexGammaCorrected
-                                     : floorTex);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindTexture(GL_TEXTURE_2D, floorTex);
+    renderScene(depthShader);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // Reset viewport
+    glViewport(0, 0, window::width, window::height);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Render Depth map to quad for visual debugging
+    debugDepthShader.use();
+    debugDepthShader.setFloat("u_NearPlane", nearPlane);
+    debugDepthShader.setFloat("u_FarPlane", farPlane);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    renderQuad();
 
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
 
-  glDeleteBuffers(1, &planeVBO);
-  glDeleteVertexArrays(1, &planeVAO);
-
-  ourShader.remove();
+  depthShader.remove();
+  debugDepthShader.remove();
   glfwTerminate();
   return 0;
 }

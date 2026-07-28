@@ -43,6 +43,7 @@ add_executable(${PROJECT_NAME}
   src/callbacks.cpp
   src/mesh.cpp
   src/model.cpp
+  src/render.cpp
   src/shader.cpp
   src/stb_image.cpp
   src/textures.cpp
