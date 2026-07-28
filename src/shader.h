@@ -9,6 +9,9 @@ class Shader {
   Shader(const char* vertexPath, const char* fragmentPath,
          const char* geometryPath = nullptr);
 
+  // Getters/Setters
+  unsigned int getShaderProgramId() const;
+
   // use/activate the shader and delete it
   void use();
   void remove();
@@ -37,7 +40,7 @@ class Shader {
   void setUniformBlock(const std::string& name, int value);
 
  private:
-  unsigned int m_shaderProgram;
+  unsigned int m_shaderProgramId;
 };
 
 #endif

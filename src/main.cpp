@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
+#include <array>
 #include <cstddef>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -17,11 +18,28 @@
 #include "textures.h"
 
 // Light configuration
-namespace light {
-constexpr glm::vec3 position{0.0f, 0.0f, 0.0f};
-inline bool isBlinnActive{false};
-inline bool isBlinnKeyPressed{false};
-}  // namespace light
+// clang-format off
+namespace lights {
+constexpr std::array<glm::vec3, 4> positions{
+  glm::vec3(-3.0f, 0.0f, 0.0f),
+  glm::vec3(-1.0f, 0.0f, 0.0f),
+  glm::vec3( 1.0f, 0.0f, 0.0f),
+  glm::vec3( 3.0f, 0.0f, 0.0f)
+};
+constexpr std::array<glm::vec3, 4> colors{
+  glm::vec3(0.25f),
+  glm::vec3(0.50f),
+  glm::vec3(0.75f),
+  glm::vec3(1.00f)
+};
+}  // namespace lights
+// clang-format on
+
+// Gamma correction configuration
+namespace gammaCorrection {
+inline bool isGammaEnable{false};
+inline bool isGammaKeyPressed{false};
+}  // namespace gammaCorrection
 
 // `deltaTime` calculation to keep consistent the camera speed
 void stabilizeFrame() {
@@ -38,14 +56,13 @@ void processInput(GLFWwindow* window) {
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     glfwSetWindowShouldClose(window, true);
 
-  if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS &&
-      !light::isBlinnKeyPressed) {
-    light::isBlinnActive = !light::isBlinnActive;
-    light::isBlinnKeyPressed = true;
+  if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS &&
+      !gammaCorrection::isGammaKeyPressed) {
+    gammaCorrection::isGammaEnable = !gammaCorrection::isGammaEnable;
+    gammaCorrection::isGammaKeyPressed = true;
   }
-
-  if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE) {
-    light::isBlinnKeyPressed = false;
+  if (glfwGetKey(window, GLFW_KEY_G) == GLFW_RELEASE) {
+    gammaCorrection::isGammaKeyPressed = false;
   }
 
   camera.processKeyboardInput(window);
@@ -134,10 +151,12 @@ int main(int, char**) {
   glBindVertexArray(0);
 
   // Load textures
-  unsigned int floorTexture{loadTexture("assets/textures/wood.png")};
+  unsigned int floorTex{loadTexture("assets/textures/wood.png", false)};
+  unsigned int floorTexGammaCorrected{
+      loadTexture("assets/textures/wood.png", true)};
 
   ourShader.use();
-  ourShader.setInt("u_Texture1", 0);
+  ourShader.setInt("u_FloorTexture", 0);
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
@@ -156,19 +175,29 @@ int main(int, char**) {
     ourShader.setMat4("u_Projection", projection);
     ourShader.setMat4("u_View", camera.getViewMatrix());
 
-    // Set light uniforms
-    ourShader.setVec3("u_ViewPos", camera.getPosition());
-    ourShader.setVec3("u_LightPos", light::position);
-    ourShader.setInt("u_IsBlinnActive", light::isBlinnActive);
+    // Set uniforms
+    glUniform3fv(glGetUniformLocation(ourShader.getShaderProgramId(),
+                                      "u_LightPositions"),
+                 lights::positions.size(), &lights::positions[0][0]);
+    glUniform3fv(
+        glGetUniformLocation(ourShader.getShaderProgramId(), "u_LightColors"),
+        lights::colors.size(), &lights::colors[0][0]);
 
-    // Check light state
-    std::cout << "Using: " << (light::isBlinnActive ? "Blinn-Phong" : "Phong")
+    ourShader.setVec3("u_ViewPos", camera.getPosition());
+    ourShader.setBool("u_isGammaEnable", gammaCorrection::isGammaEnable);
+
+    // Check gamma correction state
+    std::cout << "Using: "
+              << (gammaCorrection::isGammaEnable ? "Gamma Correction Enabled"
+                                                 : "Gamma Correction Disabled")
               << '\n';
 
     // Render plane
     glBindVertexArray(planeVAO);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, floorTexture);
+    glBindTexture(GL_TEXTURE_2D, gammaCorrection::isGammaEnable
+                                     ? floorTexGammaCorrected
+                                     : floorTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glfwSwapBuffers(window);
