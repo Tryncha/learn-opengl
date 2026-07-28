@@ -22,7 +22,7 @@ constexpr auto texCoords{6 * sizeof(float)};
 
 // Renders a 1x1 3D cube in NDC
 void renderCube() {
-  if (meshes::cubeVAO == 0) {
+  if (!meshes::cubeVAO) {
     glGenVertexArrays(1, &meshes::cubeVAO);
     glGenBuffers(1, &meshes::cubeVBO);
 
@@ -71,7 +71,7 @@ constexpr auto texCoords{3 * sizeof(float)};
 
 // Renders a 1x1 XY quad in NDC
 void renderQuad() {
-  if (meshes::quadVAO == 0) {
+  if (!meshes::quadVAO) {
     glGenVertexArrays(1, &meshes::quadVAO);
     glGenBuffers(1, &meshes::quadVBO);
 

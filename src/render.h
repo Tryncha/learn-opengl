@@ -5,9 +5,9 @@
 
 namespace meshes {
 inline unsigned int planeVAO{};
-inline unsigned int cubeVAO{0};
-inline unsigned int cubeVBO{0};
-inline unsigned int quadVAO{0};
+inline unsigned int cubeVAO{};
+inline unsigned int cubeVBO{};
+inline unsigned int quadVAO{};
 inline unsigned int quadVBO{};
 }  // namespace meshes
 
