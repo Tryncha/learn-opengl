@@ -15,7 +15,7 @@ uniform sampler2D u_ShadowMap;
 uniform vec3 u_LightPos;
 uniform vec3 u_ViewPos;
 
-bool calcShadow() {
+bool calcShadow(vec3 lightDir) {
   // Perform perspective divide
   vec3 projCoords = in_Frag.FragPosLightSpace.xyz / in_Frag.FragPosLightSpace.w;
   // Transform to [0,1] range
@@ -26,8 +26,10 @@ bool calcShadow() {
   // Get depth of current fragment from light's perspective
   float currentDepth = projCoords.z;
 
+// Calculate the bias
+  float bias = max(0.05 * (1.0 - dot(in_Frag.Normal, lightDir)), 0.005);
   // Check whether current frag pos is in shadow
-  return currentDepth > closestDepth;
+  return (currentDepth - bias) > closestDepth;
 }
 
 void main() {
@@ -50,7 +52,7 @@ void main() {
   vec3 specular = specIntensity * lightColor;  
 
   // Calculate shadow
-  bool isShadow = calcShadow();
+  bool isShadow = calcShadow(lightDir);
   vec3 lightResult = (ambient + ((1.0 - float(isShadow)) * (diffuse + specular))) * texColor;
 
   FragColor = vec4(lightResult, 1.0);
