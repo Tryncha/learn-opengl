@@ -20,7 +20,7 @@
 
 // Light configuration
 namespace light {
-constexpr glm::vec3 position{glm::vec3(-2.0f, 4.0f, -1.0f)};
+inline glm::vec3 position{glm::vec3(-2.0f, 4.0f, -1.0f)};
 }  // namespace light
 
 // `deltaTime` calculation to keep consistent the camera speed
@@ -168,6 +168,12 @@ int main(int, char**) {
   while (!glfwWindowShouldClose(window)) {
     stabilizeFrame();
     processInput(window);
+
+    // Change light position over time
+    light::position.x = std::sin(static_cast<float>(glfwGetTime())) * 3.0f;
+    light::position.z = std::cos(static_cast<float>(glfwGetTime())) * 2.0f;
+    light::position.y =
+        5.0f + std::cos(static_cast<float>(glfwGetTime())) * 1.0f;
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

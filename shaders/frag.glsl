@@ -33,11 +33,44 @@ bool calcShadow(vec3 lightDir) {
 
   // Force the shadow value to 0.0 whenever the projected
   // vector's z-coord is larger than 1.0
-  if (projCoords.z > 1.0) {
+  if (projCoords.z > 1.0)
     isShadow = false;
-  }
 
   return isShadow;
+}
+
+float calcShadowPCF(vec3 lightDir) {
+  // Perform perspective divide
+  vec3 projCoords = in_Frag.FragPosLightSpace.xyz / in_Frag.FragPosLightSpace.w;
+  // Transform to [0,1] range
+  projCoords = projCoords * 0.5 + 0.5;
+
+  // Get depth of current fragment from light's perspective
+  float currentDepth = projCoords.z;
+
+  // Calculate the bias
+  float bias = max(0.05 * (1.0 - dot(in_Frag.Normal, lightDir)), 0.005);
+
+  // Check whether current frag pos is in shadow
+  float shadowIntensity = 0.0;
+  vec2 texelSize = 1.0 / textureSize(u_ShadowMap, 0);
+
+  for (int x = -1; x <= 1; x++) {
+    for (int y = -1; y <= 1; y++) {
+      float pcfDepth = texture(u_ShadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+      shadowIntensity += (currentDepth - bias > pcfDepth) ? 1.0 : 0.0;
+    }
+  }
+
+  // Reduce intensity to soften the shadow
+  shadowIntensity /= 9.0;
+
+  // Force the shadow value to 0.0 whenever the projected
+  // vector's z-coord is larger than 1.0
+  if (projCoords.z > 1.0)
+    shadowIntensity = 0.0;
+
+  return shadowIntensity;
 }
 
 void main() {
@@ -60,8 +93,8 @@ void main() {
   vec3 specular = specIntensity * lightColor;  
 
   // Calculate shadow
-  bool isShadow = calcShadow(lightDir);
-  vec3 lightResult = (ambient + ((1.0 - float(isShadow)) * (diffuse + specular))) * texColor;
+  float shadowIntensity = calcShadowPCF(lightDir);
+  vec3 lightResult = (ambient + ((1.0 - shadowIntensity) * (diffuse + specular))) * texColor;
 
   FragColor = vec4(lightResult, 1.0);
 }
