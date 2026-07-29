@@ -87,6 +87,7 @@ int main(int, char**) {
   glfwSetWindowUserPointer(window, &camera);
 
   // Build and compile shaders
+  Shader ourShader{"shaders/vert.glsl", "shaders/frag.glsl"};
   Shader depthShader{"shaders/vert_depth.glsl", "shaders/frag_depth.glsl"};
   Shader debugDepthShader{"shaders/vert_debug_depth.glsl",
                           "shaders/frag_debug_depth.glsl"};
@@ -116,13 +117,13 @@ int main(int, char**) {
 
   // TexCoords attribute
   glEnableVertexAttribArray(2);
-  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride,
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride,
                         reinterpret_cast<void*>(6 * sizeof(float)));
 
   glBindVertexArray(0);
 
   // Load textures
-  unsigned int floorTex{loadTexture("assets/textures/wood.png", false)};
+  unsigned int woodTex{loadTexture("assets/textures/wood.png", false)};
 
   // Configure depth map framebuffer
   constexpr int shadowWidth{1024};
@@ -152,6 +153,11 @@ int main(int, char**) {
   glReadBuffer(GL_NONE);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+  // Shaders configuration
+  ourShader.use();
+  ourShader.setInt("u_DiffuseTexture", 0);
+  ourShader.setInt("u_ShadowMap", 1);
+
   debugDepthShader.use();
   debugDepthShader.setInt("u_DepthMap", 0);
 
@@ -163,7 +169,7 @@ int main(int, char**) {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Render depth of the scene to texture (from light's perspective)
+    // 1. Render depth of the scene to texture (from light's perspective)
     glm::mat4 lightProjection{glm::mat4(1.0f)};
     glm::mat4 lightView{glm::mat4(1.0f)};
     glm::mat4 lightSpace{glm::mat4(1.0f)};
@@ -183,23 +189,50 @@ int main(int, char**) {
 
     glViewport(0, 0, shadowWidth, shadowHeight);
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+
     glClear(GL_DEPTH_BUFFER_BIT);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, floorTex);
+    glBindTexture(GL_TEXTURE_2D, woodTex);
     renderScene(depthShader);
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Reset viewport
     glViewport(0, 0, window::width, window::height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Render Depth map to quad for visual debugging
-    debugDepthShader.use();
-    debugDepthShader.setFloat("u_NearPlane", nearPlane);
-    debugDepthShader.setFloat("u_FarPlane", farPlane);
+    // 2. Render scene as normal using the generated depth/shadow map
+    ourShader.use();
+
+    glm::mat4 projection{glm::perspective(glm::radians(camera.getFov()),
+                                          window::aspectRatio, 0.1f, 100.0f)};
+    glm::mat4 view{camera.getViewMatrix()};
+
+    // Set transformation matrices uniforms
+    ourShader.setMat4("u_Projection", projection);
+    ourShader.setMat4("u_View", view);
+
+    // Set light uniforms
+    ourShader.setVec3("u_ViewPos", camera.getPosition());
+    ourShader.setVec3("u_LightPos", light::position);
+    ourShader.setMat4("u_LightSpace", lightSpace);
+
     glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, woodTex);
+    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, depthMap);
-    renderQuad();
+
+    renderScene(ourShader);
+
+    // Optional. Render Depth map to quad for visual debugging
+    // debugDepthShader.use();
+    // debugDepthShader.setFloat("u_NearPlane", nearPlane);
+    // debugDepthShader.setFloat("u_FarPlane", farPlane);
+
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_2D, depthMap);
+
+    // renderQuad();
 
     glfwSwapBuffers(window);
     glfwPollEvents();
