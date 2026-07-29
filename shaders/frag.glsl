@@ -29,7 +29,15 @@ bool calcShadow(vec3 lightDir) {
   // Calculate the bias
   float bias = max(0.05 * (1.0 - dot(in_Frag.Normal, lightDir)), 0.005);
   // Check whether current frag pos is in shadow
-  return (currentDepth - bias) > closestDepth;
+  bool isShadow = (currentDepth - bias) > closestDepth;
+
+  // Force the shadow value to 0.0 whenever the projected
+  // vector's z-coord is larger than 1.0
+  if (projCoords.z > 1.0) {
+    isShadow = false;
+  }
+
+  return isShadow;
 }
 
 void main() {
