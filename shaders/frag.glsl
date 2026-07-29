@@ -26,7 +26,7 @@ bool calcShadow(vec3 lightDir) {
   // Get depth of current fragment from light's perspective
   float currentDepth = projCoords.z;
 
-// Calculate the bias
+  // Calculate the bias
   float bias = max(0.05 * (1.0 - dot(in_Frag.Normal, lightDir)), 0.005);
   // Check whether current frag pos is in shadow
   return (currentDepth - bias) > closestDepth;

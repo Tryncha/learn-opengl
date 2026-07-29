@@ -170,6 +170,7 @@ int main(int, char**) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // 1. Render depth of the scene to texture (from light's perspective)
+    glCullFace(GL_FRONT);
     glm::mat4 lightProjection{glm::mat4(1.0f)};
     glm::mat4 lightView{glm::mat4(1.0f)};
     glm::mat4 lightSpace{glm::mat4(1.0f)};
@@ -200,6 +201,7 @@ int main(int, char**) {
     // Reset viewport
     glViewport(0, 0, window::width, window::height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glCullFace(GL_BACK);
 
     // 2. Render scene as normal using the generated depth/shadow map
     ourShader.use();
