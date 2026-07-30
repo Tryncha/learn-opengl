@@ -189,6 +189,13 @@ int main(int, char**) {
 
     lightProjection =
         glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
+
+    // In case to use a perspective matrix
+    // lightProjection = glm::perspective(
+    //     glm::radians(90.0f),
+    //     static_cast<float>(shadowWidth) / static_cast<float>(shadowHeight),
+    //     1.0f, 25.0f);
+
     lightView = glm::lookAt(light::position, glm::vec3(0.0f),
                             glm::vec3(0.0f, 1.0f, 0.0f));
     lightSpace = lightProjection * lightView;
