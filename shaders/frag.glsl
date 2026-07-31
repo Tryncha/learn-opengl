@@ -16,9 +16,21 @@ uniform vec3 u_ViewPos;
 
 uniform float u_FarPlane;
 
-const float BIAS = 0.05;
-const float SAMPLES = 4.0;
-const float OFFSET = 0.1;
+const float BIAS = 0.15;
+const int SAMPLES_AMOUNT = 20;
+
+const vec3 GRID_SAMPLING_DISK[SAMPLES_AMOUNT] = vec3[](
+  vec3( 1,  1,  1), vec3( 1, -1,  1),
+  vec3(-1, -1,  1), vec3(-1,  1,  1),
+  vec3( 1,  1, -1), vec3( 1, -1, -1),
+  vec3(-1, -1, -1), vec3(-1,  1, -1), 
+  vec3( 1,  1,  0), vec3( 1, -1,  0),
+  vec3(-1, -1,  0), vec3(-1,  1,  0),
+  vec3( 1,  0,  1), vec3(-1,  0,  1), 
+  vec3( 1,  0, -1), vec3(-1,  0, -1),
+  vec3( 0,  1,  1), vec3( 0, -1,  1),
+  vec3( 0, -1, -1), vec3( 0,  1, -1)
+);
 
 float calcShadowIntensity() {
   // Get vector between fragment position and light position
@@ -34,21 +46,19 @@ float calcShadowIntensity() {
 
   // Now calculate shadows using PCF
   float shadowIntensity = 0.0;
+  float viewDistance = length(u_ViewPos - in_Frag.FragPos);
+  float diskRadius = (1.0 + (viewDistance / u_FarPlane)) / 25.0;
 
-  for (float x = -OFFSET; x < OFFSET; x += OFFSET / (SAMPLES * 0.5)) {
-    for (float y = -OFFSET; y < OFFSET; y += OFFSET / (SAMPLES * 0.5)) {
-      for (float z = -OFFSET; z < OFFSET; z += OFFSET / (SAMPLES * 0.5)) {
-        float closestDepth = texture(u_DepthMap, fragToLight + vec3(x, y, z)).r;
-        // Undo mapping [0,1]
-        closestDepth *= u_FarPlane;
-        if (currentDepth - BIAS > closestDepth) {
-          shadowIntensity += 1.0;
-        }
-      }
+  for (int i = 0; i < SAMPLES_AMOUNT; i++) {
+    float closestDepth = texture(u_DepthMap, fragToLight + GRID_SAMPLING_DISK[i] * diskRadius).r;
+    // Undo mapping [0,1]
+    closestDepth *= u_FarPlane;
+    if (currentDepth - BIAS > closestDepth) {
+      shadowIntensity += 1.0;
     }
   }
 
-  shadowIntensity /= (SAMPLES * SAMPLES * SAMPLES);
+  shadowIntensity /= float(SAMPLES_AMOUNT);
   return shadowIntensity;
 }
 
