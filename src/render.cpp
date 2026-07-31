@@ -106,29 +106,56 @@ void renderQuad() {
 void renderScene(const Shader& shader) {
   glm::mat4 model{glm::mat4(1.0f)};
 
-  // Floor
+  // Room cube
+  model = glm::mat4(1.0f);
+  model = glm::scale(model, glm::vec3(5.0f));
+
   shader.setMat4("u_Model", model);
-  glBindVertexArray(meshes::planeVAO);
-  glDrawArrays(GL_TRIANGLES, 0, 6);
+
+  // note that we disable culling here since we render
+  // 'inside' the cube instead of the usual 'outside'
+  // which throws off the normal culling methods.
+  glDisable(GL_CULL_FACE);
+
+  // A small little hack to invert normals when drawing cube
+  // from the inside so lighting still works.
+  shader.setBool("u_ReverseNormals", true);
+  renderCube();
+  // and of course disable it
+  shader.setBool("u_ReverseNormals", false);
+
+  glEnable(GL_CULL_FACE);
 
   // Cubes
   model = glm::mat4(1.0f);
-  model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0f));
+  model = glm::translate(model, glm::vec3(4.0f, -3.5f, 0.0f));
   model = glm::scale(model, glm::vec3(0.5f));
   shader.setMat4("u_Model", model);
   renderCube();
 
   model = glm::mat4(1.0f);
-  model = glm::translate(model, glm::vec3(2.0f, 0.0f, 1.0f));
+  model = glm::translate(model, glm::vec3(2.0f, 3.0f, 1.0f));
+  model = glm::scale(model, glm::vec3(0.75f));
+  shader.setMat4("u_Model", model);
+  renderCube();
+
+  model = glm::mat4(1.0f);
+  model = glm::translate(model, glm::vec3(-3.0f, -1.0f, 0.0f));
   model = glm::scale(model, glm::vec3(0.5f));
   shader.setMat4("u_Model", model);
   renderCube();
 
   model = glm::mat4(1.0f);
-  model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 2.0f));
+  model = glm::translate(model, glm::vec3(-1.5f, 1.0f, 1.5f));
+  model = glm::scale(model, glm::vec3(0.5f));
+  shader.setMat4("u_Model", model);
+  renderCube();
+
+  model = glm::mat4(1.0f);
+  model = glm::translate(model, glm::vec3(-1.5f, 2.0f, -3.0));
   model = glm::rotate(model, glm::radians(60.0f),
                       glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f)));
-  model = glm::scale(model, glm::vec3(0.25f));
+  model = glm::scale(model, glm::vec3(0.75f));
   shader.setMat4("u_Model", model);
   renderCube();
 }

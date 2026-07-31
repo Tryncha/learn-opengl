@@ -4,7 +4,6 @@
 #include "shader.h"
 
 namespace meshes {
-inline unsigned int planeVAO{};
 inline unsigned int cubeVAO{};
 inline unsigned int cubeVBO{};
 inline unsigned int quadVAO{};

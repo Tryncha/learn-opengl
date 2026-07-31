@@ -6,71 +6,32 @@ in OUT_VERT {
   vec3 FragPos;
   vec3 Normal;
   vec2 TexCoords;
-  vec4 FragPosLightSpace;
 } in_Frag;
 
 uniform sampler2D u_DiffuseTexture;
-uniform sampler2D u_ShadowMap;
+uniform samplerCube u_DepthMap;
 
 uniform vec3 u_LightPos;
 uniform vec3 u_ViewPos;
 
-bool calcShadow(vec3 lightDir) {
-  // Perform perspective divide
-  vec3 projCoords = in_Frag.FragPosLightSpace.xyz / in_Frag.FragPosLightSpace.w;
-  // Transform to [0,1] range
-  projCoords = projCoords * 0.5 + 0.5;
+uniform float u_FarPlane;
 
-  // Get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-  float closestDepth = texture(u_ShadowMap, projCoords.xy).r; 
-  // Get depth of current fragment from light's perspective
-  float currentDepth = projCoords.z;
+const float BIAS = 0.05;
 
-  // Calculate the bias
-  float bias = max(0.05 * (1.0 - dot(in_Frag.Normal, lightDir)), 0.005);
-  // Check whether current frag pos is in shadow
-  bool isShadow = (currentDepth - bias) > closestDepth;
+float calcShadowIntensity() {
+  // Get vector between fragment position and light position
+  vec3 fragToLight = in_Frag.FragPos - u_LightPos;
 
-  // Force the shadow value to 0.0 whenever the projected
-  // vector's z-coord is larger than 1.0
-  if (projCoords.z > 1.0)
-    isShadow = false;
+  // ise the fragment to light vector to sample from the depth map    
+  float closestDepth = texture(u_DepthMap, fragToLight).r;
+  // It is currently in linear range between [0,1], let's re-transform it back to original depth value
+  closestDepth *= u_FarPlane;
 
-  return isShadow;
-}
+  // Now get current linear depth as the length between the fragment and light position
+  float currentDepth = length(fragToLight);
 
-float calcShadowPCF(vec3 lightDir) {
-  // Perform perspective divide
-  vec3 projCoords = in_Frag.FragPosLightSpace.xyz / in_Frag.FragPosLightSpace.w;
-  // Transform to [0,1] range
-  projCoords = projCoords * 0.5 + 0.5;
-
-  // Get depth of current fragment from light's perspective
-  float currentDepth = projCoords.z;
-
-  // Calculate the bias
-  float bias = max(0.05 * (1.0 - dot(in_Frag.Normal, lightDir)), 0.005);
-
-  // Check whether current frag pos is in shadow
-  float shadowIntensity = 0.0;
-  vec2 texelSize = 1.0 / textureSize(u_ShadowMap, 0);
-
-  for (int x = -1; x <= 1; x++) {
-    for (int y = -1; y <= 1; y++) {
-      float pcfDepth = texture(u_ShadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
-      shadowIntensity += (currentDepth - bias > pcfDepth) ? 1.0 : 0.0;
-    }
-  }
-
-  // Reduce intensity to soften the shadow
-  shadowIntensity /= 9.0;
-
-  // Force the shadow value to 0.0 whenever the projected
-  // vector's z-coord is larger than 1.0
-  if (projCoords.z > 1.0)
-    shadowIntensity = 0.0;
-
-  return shadowIntensity;
+  // We use a much larger bias since depth is now in [near_plane, far_plane] range
+  return (currentDepth - BIAS > closestDepth) ? 1.0 : 0.0;
 }
 
 void main() {
@@ -93,7 +54,7 @@ void main() {
   vec3 specular = specIntensity * lightColor;  
 
   // Calculate shadow
-  float shadowIntensity = calcShadowPCF(lightDir);
+  float shadowIntensity = calcShadowIntensity();
   vec3 lightResult = (ambient + ((1.0 - shadowIntensity) * (diffuse + specular))) * texColor;
 
   FragColor = vec4(lightResult, 1.0);
