@@ -17,6 +17,8 @@ uniform vec3 u_ViewPos;
 uniform float u_FarPlane;
 
 const float BIAS = 0.05;
+const float SAMPLES = 4.0;
+const float OFFSET = 0.1;
 
 float calcShadowIntensity() {
   // Get vector between fragment position and light position
@@ -30,8 +32,24 @@ float calcShadowIntensity() {
   // Now get current linear depth as the length between the fragment and light position
   float currentDepth = length(fragToLight);
 
-  // We use a much larger bias since depth is now in [near_plane, far_plane] range
-  return (currentDepth - BIAS > closestDepth) ? 1.0 : 0.0;
+  // Now calculate shadows using PCF
+  float shadowIntensity = 0.0;
+
+  for (float x = -OFFSET; x < OFFSET; x += OFFSET / (SAMPLES * 0.5)) {
+    for (float y = -OFFSET; y < OFFSET; y += OFFSET / (SAMPLES * 0.5)) {
+      for (float z = -OFFSET; z < OFFSET; z += OFFSET / (SAMPLES * 0.5)) {
+        float closestDepth = texture(u_DepthMap, fragToLight + vec3(x, y, z)).r;
+        // Undo mapping [0,1]
+        closestDepth *= u_FarPlane;
+        if (currentDepth - BIAS > closestDepth) {
+          shadowIntensity += 1.0;
+        }
+      }
+    }
+  }
+
+  shadowIntensity /= (SAMPLES * SAMPLES * SAMPLES);
+  return shadowIntensity;
 }
 
 void main() {
