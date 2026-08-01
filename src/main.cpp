@@ -76,7 +76,6 @@ int main(int, char**) {
 
   // Configure global OpenGL state
   glEnable(GL_DEPTH_TEST);
-  glEnable(GL_CULL_FACE);
 
   // Create camera and save it as "user pointer" to
   // retrieve later by reference
@@ -85,150 +84,70 @@ int main(int, char**) {
 
   // Build and compile shaders
   Shader ourShader{"shaders/vert.glsl", "shaders/frag.glsl"};
-  Shader depthShader{"shaders/depth_vert.glsl", "shaders/depth_frag.glsl",
-                     "shaders/depth_geom.glsl"};
 
   // Load textures
-  unsigned int woodTexture{loadTexture("assets/textures/wood.png", false)};
-
-  // Configure depth map framebuffer
-  constexpr int shadowWidth{1024};
-  constexpr int shadowHeight{1024};
-
-  // Create depth map FBO
-  unsigned int depthMapFramebufferId{};
-  glGenFramebuffers(1, &depthMapFramebufferId);
-
-  // Create depth cubemap texture
-  unsigned int depthCubemapId{};
-  glGenTextures(1, &depthCubemapId);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemapId);
-
-  for (int i{0}; i < 6; ++i) {
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT,
-                 shadowWidth, shadowHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
-                 nullptr);
-  }
-
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-  // Attach depth texture as FBO's depth buffer
-  glBindFramebuffer(GL_FRAMEBUFFER, depthMapFramebufferId);
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubemapId, 0);
-  glDrawBuffer(GL_NONE);
-  glReadBuffer(GL_NONE);
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  unsigned int diffuseMapId{loadTexture("assets/textures/brickwall.jpg")};
+  unsigned int normalMapId{loadTexture("assets/textures/brickwall_normal.jpg")};
 
   // Shaders configuration
   ourShader.use();
-  ourShader.setInt("u_DiffuseTexture", 0);
-  ourShader.setInt("u_ShadowMap", 1);
+  ourShader.setInt("u_DiffuseMap", 0);
+  ourShader.setInt("u_NormalMap", 1);
 
   // Light configuration
-  glm::vec3 lightPosition{glm::vec3(0.0f)};
-
-  // Cubemap transformation matrices
-  constexpr float nearPlane{1.0f};
-  constexpr float farPlane{25.0f};
-
-  const glm::mat4 shadowProjection{glm::perspective(
-      glm::radians(90.0f),
-      static_cast<float>(shadowWidth) / static_cast<float>(shadowHeight),
-      nearPlane, farPlane)};
+  glm::vec3 lightPosition{glm::vec3(0.5f, 1.0f, 0.3f)};
 
   // Render loop
   while (!glfwWindowShouldClose(window)) {
     stabilizeFrame();
     processInput(window);
 
-    // Change light position over time
-    lightPosition.z = 3.0f * static_cast<float>(0.5f * std::sin(glfwGetTime()));
-
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Recalculate transformation matrices
-    const std::array<glm::mat4, 6> shadowTransf{
-        glm::mat4(shadowProjection *
-                  glm::lookAt(lightPosition,
-                              lightPosition + glm::vec3(1.0f, 0.0f, 0.0f),
-                              glm::vec3(0.0f, -1.0f, 0.0f))),
-        glm::mat4(shadowProjection *
-                  glm::lookAt(lightPosition,
-                              lightPosition + glm::vec3(-1.0f, 0.0f, 0.0f),
-                              glm::vec3(0.0f, -1.0f, 0.0f))),
-        glm::mat4(shadowProjection *
-                  glm::lookAt(lightPosition,
-                              lightPosition + glm::vec3(0.0f, 1.0f, 0.0f),
-                              glm::vec3(0.0f, 0.0f, 1.0f))),
-        glm::mat4(shadowProjection *
-                  glm::lookAt(lightPosition,
-                              lightPosition + glm::vec3(0.0f, -1.0f, 0.0f),
-                              glm::vec3(0.0f, 0.0f, -1.0f))),
-        glm::mat4(shadowProjection *
-                  glm::lookAt(lightPosition,
-                              lightPosition + glm::vec3(0.0f, 0.0f, 1.0f),
-                              glm::vec3(0.0f, -1.0f, 0.0f))),
-        glm::mat4(shadowProjection *
-                  glm::lookAt(lightPosition,
-                              lightPosition + glm::vec3(0.0f, 0.0f, -1.0f),
-                              glm::vec3(0.0f, -1.0f, 0.0f)))};
-
-    // 1. Render scene to depth cubemap
-    glViewport(0, 0, shadowWidth, shadowHeight);
-    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFramebufferId);
-    glClear(GL_DEPTH_BUFFER_BIT);
-
-    depthShader.use();
-
-    for (std::size_t i{0}; i < 6; ++i) {
-      depthShader.setMat4("u_ShadowTransf[" + std::to_string(i) + "]",
-                          shadowTransf[i]);
-    }
-
-    depthShader.setFloat("u_FarPlane", farPlane);
-    depthShader.setVec3("u_LightPos", lightPosition);
-
-    renderScene(depthShader);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    // 2. Render scene as normal using the generated depth/shadow map
-    glViewport(0, 0, window::width, window::height);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    ourShader.use();
-
+    // Configure view/projection matrices
     glm::mat4 projection{glm::perspective(glm::radians(camera.getFov()),
                                           window::aspectRatio, 0.1f, 100.0f)};
     glm::mat4 view{camera.getViewMatrix()};
 
-    // Set transformation matrices uniforms
+    // and set uniforms
+    ourShader.use();
     ourShader.setMat4("u_Projection", projection);
     ourShader.setMat4("u_View", view);
 
-    // Set light uniforms
+    // Set other uniforms
+    glm::mat4 model{glm::mat4(1.0f)};
+    // Rotate the quad to show normal mapping from multiple directions
+    model = glm::rotate(
+        model, glm::radians(static_cast<float>(glfwGetTime()) * -10.0f),
+        glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
+
     ourShader.setVec3("u_ViewPos", camera.getPosition());
     ourShader.setVec3("u_LightPos", lightPosition);
-    ourShader.setFloat("u_FarPlane", farPlane);
+    ourShader.setMat4("u_Model", model);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, woodTexture);
+    glBindTexture(GL_TEXTURE_2D, diffuseMapId);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemapId);
+    glBindTexture(GL_TEXTURE_2D, normalMapId);
 
-    renderScene(ourShader);
+    renderQuad();
+
+    // Render light source:
+    // Simply re-renders a smaller plane at the light's position
+    // for debugging/visualization
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, lightPosition);
+    model = glm::scale(model, glm::vec3(0.1f));
+    ourShader.setMat4("u_Model", model);
+
+    renderQuad();
 
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
 
   ourShader.remove();
-  depthShader.remove();
 
   glfwTerminate();
   return 0;

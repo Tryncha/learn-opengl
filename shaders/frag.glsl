@@ -4,86 +4,38 @@ out vec4 FragColor;
 
 in OUT_VERT {
   vec3 FragPos;
-  vec3 Normal;
   vec2 TexCoords;
+  vec3 TangentLightPos;
+  vec3 TangentViewPos;
+  vec3 TangentFragPos;
 } in_Frag;
 
-uniform sampler2D u_DiffuseTexture;
-uniform samplerCube u_DepthMap;
-
-uniform vec3 u_LightPos;
-uniform vec3 u_ViewPos;
-
-uniform float u_FarPlane;
-
-const float BIAS = 0.15;
-const int SAMPLES_AMOUNT = 20;
-
-const vec3 GRID_SAMPLING_DISK[SAMPLES_AMOUNT] = vec3[](
-  vec3( 1,  1,  1), vec3( 1, -1,  1),
-  vec3(-1, -1,  1), vec3(-1,  1,  1),
-  vec3( 1,  1, -1), vec3( 1, -1, -1),
-  vec3(-1, -1, -1), vec3(-1,  1, -1), 
-  vec3( 1,  1,  0), vec3( 1, -1,  0),
-  vec3(-1, -1,  0), vec3(-1,  1,  0),
-  vec3( 1,  0,  1), vec3(-1,  0,  1), 
-  vec3( 1,  0, -1), vec3(-1,  0, -1),
-  vec3( 0,  1,  1), vec3( 0, -1,  1),
-  vec3( 0, -1, -1), vec3( 0,  1, -1)
-);
-
-float calcShadowIntensity() {
-  // Get vector between fragment position and light position
-  vec3 fragToLight = in_Frag.FragPos - u_LightPos;
-
-  // ise the fragment to light vector to sample from the depth map    
-  float closestDepth = texture(u_DepthMap, fragToLight).r;
-  // It is currently in linear range between [0,1], let's re-transform it back to original depth value
-  closestDepth *= u_FarPlane;
-
-  // Now get current linear depth as the length between the fragment and light position
-  float currentDepth = length(fragToLight);
-
-  // Now calculate shadows using PCF
-  float shadowIntensity = 0.0;
-  float viewDistance = length(u_ViewPos - in_Frag.FragPos);
-  float diskRadius = (1.0 + (viewDistance / u_FarPlane)) / 25.0;
-
-  for (int i = 0; i < SAMPLES_AMOUNT; i++) {
-    float closestDepth = texture(u_DepthMap, fragToLight + GRID_SAMPLING_DISK[i] * diskRadius).r;
-    // Undo mapping [0,1]
-    closestDepth *= u_FarPlane;
-    if (currentDepth - BIAS > closestDepth) {
-      shadowIntensity += 1.0;
-    }
-  }
-
-  shadowIntensity /= float(SAMPLES_AMOUNT);
-  return shadowIntensity;
-}
+uniform sampler2D u_DiffuseMap;
+uniform sampler2D u_NormalMap;
 
 void main() {
-  vec3 viewDir = normalize(u_ViewPos - in_Frag.FragPos);
-  vec3 lightDir = normalize(u_LightPos - in_Frag.FragPos);
-  vec3 lightColor = vec3(0.3);
-  vec3 texColor = texture(u_DiffuseTexture, in_Frag.TexCoords).rgb;
+  vec3 viewDir = normalize(in_Frag.TangentViewPos - in_Frag.TangentFragPos);
+  vec3 lightDir = normalize(in_Frag.TangentLightPos - in_Frag.TangentFragPos);
+  // Obtain normal from normal map in range [0,1]
+  vec3 normal = texture(u_NormalMap, in_Frag.TexCoords).rgb;
+  // Transform normal vector to range [-1,1]
+  normal = normalize(normal * 2.0 - 1.0);
+  // Get diffuse color
+  vec3 diffColor = texture(u_DiffuseMap, in_Frag.TexCoords).rgb;
 
   // Ambient
-  vec3 ambient = 0.3 * lightColor;
+  vec3 ambient = 0.1 * diffColor;
 
   // Diffuse
-  float diffIntensity = max(dot(lightDir, in_Frag.Normal), 0.0);
-  vec3 diffuse = diffIntensity * lightColor;
+  float diffIntensity = max(dot(lightDir, normal), 0.0);
+  vec3 diffuse = diffIntensity * diffColor;
 
   // Specular
   float specIntensity = 0.0;
   vec3 halfwayDir = normalize(lightDir + viewDir);
-  specIntensity = pow(max(dot(in_Frag.Normal, halfwayDir), 0.0), 64.0);
-  vec3 specular = specIntensity * lightColor;  
+  specIntensity = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
+  vec3 specular = vec3(0.2) * specIntensity;
 
-  // Calculate shadow
-  float shadowIntensity = calcShadowIntensity();
-  vec3 lightResult = (ambient + ((1.0 - shadowIntensity) * (diffuse + specular))) * texColor;
-
+  vec3 lightResult = ambient + diffuse + specular;
   FragColor = vec4(lightResult, 1.0);
 }
