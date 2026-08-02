@@ -21,17 +21,21 @@ uniform mat4 u_Model;
 uniform vec3 u_LightPos;
 uniform vec3 u_ViewPos;
 
+mat3 calcTBN() {
+  mat3 normalMatrix = transpose(inverse(mat3(u_Model)));
+  vec3 T = normalize(normalMatrix * a_Tangent);
+  vec3 N = normalize(normalMatrix * a_Normal);
+  vec3 B = normalize(normalMatrix * a_Bitangent);
+
+  return transpose(mat3(T, B, N));
+}
+
 void main() {
   out_Vert.FragPos = vec3(u_Model * vec4(a_Position, 1.0));
   out_Vert.TexCoords = a_TexCoords;
 
-  mat3 normalMatrix = transpose(inverse(mat3(u_Model)));
-  vec3 T = normalize(normalMatrix * a_Tangent);
-  vec3 N = normalize(normalMatrix * a_Normal);
-  T = normalize(T - dot(T, N) * N);
-  vec3 B = cross(N, T);
+  mat3 TBN = calcTBN();
 
-  mat3 TBN = transpose(mat3(T, B, N));
   out_Vert.TangentLightPos = TBN * u_LightPos;
   out_Vert.TangentViewPos = TBN * u_ViewPos;
   out_Vert.TangentFragPos = TBN * out_Vert.FragPos;

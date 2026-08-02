@@ -19,6 +19,10 @@
 #include "shader.h"
 #include "textures.h"
 
+namespace options {
+inline float heightScale{0.1f};
+}  // namespace options
+
 // `deltaTime` calculation to keep consistent the camera speed
 void stabilizeFrame() {
   using namespace timing;
@@ -33,6 +37,20 @@ void processInput(GLFWwindow* window) {
 
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     glfwSetWindowShouldClose(window, true);
+
+  if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+    if (options::heightScale > 0.0f) {
+      options::heightScale -= 0.00001f;
+    } else {
+      options::heightScale = 0.0f;
+    }
+  } else if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+    if (options::heightScale < 1.0f) {
+      options::heightScale += 0.00001f;
+    } else {
+      options::heightScale = 1.0f;
+    }
+  }
 
   camera.processKeyboardInput(window);
 }
@@ -86,13 +104,15 @@ int main(int, char**) {
   Shader ourShader{"shaders/vert.glsl", "shaders/frag.glsl"};
 
   // Load textures
-  unsigned int diffuseMapId{loadTexture("assets/textures/brickwall.jpg")};
-  unsigned int normalMapId{loadTexture("assets/textures/brickwall_normal.jpg")};
+  unsigned int diffuseMapId{loadTexture("assets/textures/bricks2.jpg")};
+  unsigned int normalMapId{loadTexture("assets/textures/bricks2_normal.jpg")};
+  unsigned int heightMapId{loadTexture("assets/textures/bricks2_disp.jpg")};
 
   // Shaders configuration
   ourShader.use();
   ourShader.setInt("u_DiffuseMap", 0);
   ourShader.setInt("u_NormalMap", 1);
+  ourShader.setInt("u_DepthMap", 2);
 
   // Light configuration
   glm::vec3 lightPosition{glm::vec3(0.5f, 1.0f, 0.3f)};
@@ -115,9 +135,9 @@ int main(int, char**) {
     ourShader.setMat4("u_Projection", projection);
     ourShader.setMat4("u_View", view);
 
-    // Set other uniforms
+    // Render parallax-mapped quad
     glm::mat4 model{glm::mat4(1.0f)};
-    // Rotate the quad to show normal mapping from multiple directions
+    // Rotate the quad to show parallax mapping from multiple directions
     model = glm::rotate(
         model, glm::radians(static_cast<float>(glfwGetTime()) * -10.0f),
         glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
@@ -125,11 +145,14 @@ int main(int, char**) {
     ourShader.setVec3("u_ViewPos", camera.getPosition());
     ourShader.setVec3("u_LightPos", lightPosition);
     ourShader.setMat4("u_Model", model);
+    ourShader.setFloat("u_HeightScale", options::heightScale);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, diffuseMapId);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, normalMapId);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, heightMapId);
 
     renderQuad();
 
