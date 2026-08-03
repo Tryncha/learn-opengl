@@ -17,7 +17,7 @@ uniform sampler2D u_DepthMap;
 uniform float u_HeightScale;
 
 const int MIN_LAYERS = 8;
-const int MAX_LAYERS = 32;
+const int MAX_LAYERS = 64;
 
 vec2 calcParallaxMapping(vec3 viewDir) {
   // Calculate the number of layers
@@ -43,7 +43,18 @@ vec2 calcParallaxMapping(vec3 viewDir) {
     currentLayerDepth += layerDepth;
   }
 
-  return currentTexCoords;
+  // Get texture coordinates before collisison (reverse operations)
+  vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+
+  // Get depth after and before collision for linear interpolation
+  float afterDepth = currentDepthMapValue - currentLayerDepth;
+  float beforeDepth = texture(u_DepthMap, prevTexCoords).r - currentLayerDepth + layerDepth;
+
+  // Interpolation of texture coordinates
+  float weight = afterDepth / (afterDepth - beforeDepth);
+  vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0 - weight);
+
+  return finalTexCoords;
 }
 
 void main() {
