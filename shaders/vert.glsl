@@ -22,10 +22,9 @@ uniform vec3 u_LightPos;
 uniform vec3 u_ViewPos;
 
 mat3 calcTBN() {
-  mat3 normalMatrix = transpose(inverse(mat3(u_Model)));
-  vec3 T = normalize(normalMatrix * a_Tangent);
-  vec3 N = normalize(normalMatrix * a_Normal);
-  vec3 B = normalize(normalMatrix * a_Bitangent);
+  vec3 T = normalize(mat3(u_Model) * a_Tangent);
+  vec3 B = normalize(mat3(u_Model) * a_Bitangent);
+  vec3 N = normalize(mat3(u_Model) * a_Normal);
 
   return transpose(mat3(T, B, N));
 }

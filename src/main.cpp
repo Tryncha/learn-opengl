@@ -19,9 +19,9 @@
 #include "shader.h"
 #include "textures.h"
 
-namespace options {
+namespace settings {
 inline float heightScale{0.1f};
-}  // namespace options
+}  // namespace settings
 
 // `deltaTime` calculation to keep consistent the camera speed
 void stabilizeFrame() {
@@ -39,16 +39,16 @@ void processInput(GLFWwindow* window) {
     glfwSetWindowShouldClose(window, true);
 
   if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-    if (options::heightScale > 0.0f) {
-      options::heightScale -= 0.00001f;
+    if (settings::heightScale > 0.0f) {
+      settings::heightScale -= 0.0005f;
     } else {
-      options::heightScale = 0.0f;
+      settings::heightScale = 0.0f;
     }
   } else if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-    if (options::heightScale < 1.0f) {
-      options::heightScale += 0.00001f;
+    if (settings::heightScale < 1.0f) {
+      settings::heightScale += 0.0005f;
     } else {
-      options::heightScale = 1.0f;
+      settings::heightScale = 1.0f;
     }
   }
 
@@ -104,9 +104,9 @@ int main(int, char**) {
   Shader ourShader{"shaders/vert.glsl", "shaders/frag.glsl"};
 
   // Load textures
-  unsigned int diffuseMapId{loadTexture("assets/textures/bricks2.jpg")};
-  unsigned int normalMapId{loadTexture("assets/textures/bricks2_normal.jpg")};
-  unsigned int heightMapId{loadTexture("assets/textures/bricks2_disp.jpg")};
+  unsigned int diffuseMapId{loadTexture("assets/textures/wood.png")};
+  unsigned int normalMapId{loadTexture("assets/textures/toy_box_normal.png")};
+  unsigned int heightMapId{loadTexture("assets/textures/toy_box_disp.png")};
 
   // Shaders configuration
   ourShader.use();
@@ -145,7 +145,7 @@ int main(int, char**) {
     ourShader.setVec3("u_ViewPos", camera.getPosition());
     ourShader.setVec3("u_LightPos", lightPosition);
     ourShader.setMat4("u_Model", model);
-    ourShader.setFloat("u_HeightScale", options::heightScale);
+    ourShader.setFloat("u_HeightScale", settings::heightScale);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, diffuseMapId);

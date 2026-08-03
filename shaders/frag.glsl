@@ -16,9 +16,34 @@ uniform sampler2D u_DepthMap;
 
 uniform float u_HeightScale;
 
+const int MIN_LAYERS = 8;
+const int MAX_LAYERS = 32;
+
 vec2 calcParallaxMapping(vec3 viewDir) {
-  float height = texture(u_DepthMap, in_Frag.TexCoords).r;
-  return in_Frag.TexCoords - viewDir.xy * (height * u_HeightScale);
+  // Calculate the number of layers
+  float numLayers = mix(MAX_LAYERS, MIN_LAYERS, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));
+  // Calculate the size of each layer
+  float layerDepth = 1.0 / numLayers;
+  // Depth of current layer
+  float currentLayerDepth = 0.0;
+  // Amount to shift the texture coordinates per layer (from vector P)
+  vec2 P = viewDir.xy / viewDir.z * u_HeightScale;
+  vec2 deltaTexCoords = P / numLayers;
+
+  // Get initial values
+  vec2 currentTexCoords = in_Frag.TexCoords;
+  float currentDepthMapValue = texture(u_DepthMap, currentTexCoords).r;
+
+  while (currentLayerDepth < currentDepthMapValue) {
+    // Shift texture coordinates along direction of P
+    currentTexCoords -= deltaTexCoords;
+    // Get depth map value at current texture coordinates
+    currentDepthMapValue = texture(u_DepthMap, currentTexCoords).r;
+    // Get depth of next layer
+    currentLayerDepth += layerDepth;
+  }
+
+  return currentTexCoords;
 }
 
 void main() {
@@ -31,11 +56,11 @@ void main() {
   }
 
   // Obtain normal from normal map in range [0,1]
-  vec3 normal = texture(u_NormalMap, in_Frag.TexCoords).rgb;
+  vec3 normal = texture(u_NormalMap, texCoords).rgb;
   // Transform normal vector to range [-1,1]
   normal = normalize(normal * 2.0 - 1.0);
   // Get diffuse color
-  vec3 diffColor = texture(u_DiffuseMap, in_Frag.TexCoords).rgb;
+  vec3 diffColor = texture(u_DiffuseMap, texCoords).rgb;
 
   // Ambient
   vec3 ambient = 0.1 * diffColor;
