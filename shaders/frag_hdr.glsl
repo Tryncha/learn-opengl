@@ -14,13 +14,13 @@ void main() {
   vec3 hdrColor = texture(u_HdrBuffer, TexCoords).rgb;
 
   if (u_IsHdrEnable) {
-    // Reinhard
+    // Reinhard tone mapping
     // vec3 result = hdrColor / (hdrColor + vec3(1.0));
 
-    // exposure
+    // Exposure tone mapping
     vec3 result = vec3(1.0) - exp(-hdrColor * u_Exposure);
 
-    // also gamma correct while we're at it       
+    // Gamma correction
     result = pow(result, vec3(1.0 / GAMMA));
     FragColor = vec4(result, 1.0);
   } else {
