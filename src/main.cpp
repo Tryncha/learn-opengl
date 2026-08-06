@@ -230,6 +230,10 @@ int main(int, char**) {
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, gAlbedoSpecTextureId);
 
+    // Note that we don't send this to the shader.
+    // In our case, we assume it is always 1.0
+    constexpr float constant{1.0f};
+
     constexpr float linear{0.7f};
     constexpr float quadratic{1.8f};
 
@@ -245,6 +249,19 @@ int main(int, char**) {
                               linear);
       lightingShader.setFloat("u_Lights[" + std::to_string(i) + "].quadratic",
                               quadratic);
+
+      // Then calculate radius of light volume/sphere
+      const float maxBrightness = std::fmaxf(
+          std::fmaxf(lightColors[i].r, lightColors[i].g), lightColors[i].b);
+      float radius =
+          (-linear +
+           std::sqrt(linear * linear -
+                     4 * quadratic *
+                         (constant - (256.0f / 5.0f) * maxBrightness))) /
+          (2.0f * quadratic);
+
+      lightingShader.setFloat("u_Lights[" + std::to_string(i) + "].radius",
+                              radius);
     }
 
     lightingShader.setVec3("u_ViewPos", camera.getPosition());

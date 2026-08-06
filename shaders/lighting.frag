@@ -14,6 +14,7 @@ struct Light {
 
   float linear;
   float quadratic;
+  float radius;
 };
 
 const int N_LIGHTS = 32;
@@ -34,24 +35,28 @@ void main() {
   vec3 viewDir = normalize(u_ViewPos - gFragPos);
 
   for (int i = 0; i < N_LIGHTS; i++) {
-    // Diffuse
-    vec3 lightDir = normalize(u_Lights[i].position - gFragPos);
-    vec3 diffuse =
-        max(dot(gNormal, lightDir), 0.0) * gDiffuse * u_Lights[i].color;
-
-    // Specular
-    vec3 halfwayDir = normalize(lightDir + viewDir);
-    float spec = pow(max(dot(gNormal, halfwayDir), 0.0), 16.0);
-    vec3 specular = u_Lights[i].color * spec * gSpecular;
-
-    // Attenuation
+    // Calculate distance between light source and current fragment
     float distance = length(u_Lights[i].position - gFragPos);
-    float attenuation = 1.0 / (1.0 + u_Lights[i].linear * distance +
-                               u_Lights[i].quadratic * distance * distance);
 
-    diffuse *= attenuation;
-    specular *= attenuation;
-    lightResult += diffuse + specular;
+    if (distance < u_Lights[i].radius) {
+      // Diffuse
+      vec3 lightDir = normalize(u_Lights[i].position - gFragPos);
+      vec3 diffuse =
+          max(dot(gNormal, lightDir), 0.0) * gDiffuse * u_Lights[i].color;
+
+      // Specular
+      vec3 halfwayDir = normalize(lightDir + viewDir);
+      float spec = pow(max(dot(gNormal, halfwayDir), 0.0), 16.0);
+      vec3 specular = u_Lights[i].color * spec * gSpecular;
+
+      // Attenuation
+      float attenuation = 1.0 / (1.0 + u_Lights[i].linear * distance +
+                                 u_Lights[i].quadratic * distance * distance);
+
+      diffuse *= attenuation;
+      specular *= attenuation;
+      lightResult += diffuse + specular;
+    }
   }
 
   FragColor = vec4(lightResult, 1.0);
