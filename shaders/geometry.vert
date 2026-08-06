@@ -12,14 +12,16 @@ uniform mat4 u_Projection;
 uniform mat4 u_View;
 uniform mat4 u_Model;
 
-void main() {
-  vec4 worldPos = u_Model * vec4(a_Position, 1.0);
+uniform bool u_InvertedNormals;
 
-  FragPos = worldPos.xyz;
+void main() {
+  vec4 viewPos = u_View * u_Model * vec4(a_Position, 1.0);
+
+  FragPos = viewPos.xyz;
   TexCoords = a_TexCoords;
 
-  mat3 normalMatrix = transpose(inverse(mat3(u_Model)));
-  Normal = normalize(normalMatrix * a_Normal);
+  mat3 normalMatrix = transpose(inverse(mat3(u_View * u_Model)));
+  Normal = normalize(normalMatrix * (u_InvertedNormals ? -a_Normal : a_Normal));
 
-  gl_Position = u_Projection * u_View * worldPos;
+  gl_Position = u_Projection * viewPos;
 }
